@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - autoprefixer@10.5.1
+  - recharts@3.9.0
