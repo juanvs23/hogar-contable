@@ -88,6 +88,13 @@ func (db *DB) migrate() error {
 		`CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)`,
 		`CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)`,
 		`CREATE INDEX IF NOT EXISTS idx_exchange_rates_type ON exchange_rates(type)`,
+		`CREATE TABLE IF NOT EXISTS savings (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			description TEXT NOT NULL,
+			amount_bs REAL NOT NULL DEFAULT 0,
+			amount_usd REAL NOT NULL DEFAULT 0,
+			created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+		)`,
 
 		// Migrate existing tables: add new columns safely
 		`ALTER TABLE transactions ADD COLUMN amount_usd_bcv REAL NOT NULL DEFAULT 0`,
@@ -96,6 +103,7 @@ func (db *DB) migrate() error {
 		`ALTER TABLE transactions ADD COLUMN rate_p2p REAL NOT NULL DEFAULT 0`,
 
 		// Seed default categories (refresh on each startup)
+		`UPDATE transactions SET category_id=NULL WHERE category_id IN (SELECT id FROM categories WHERE is_default=1)`,
 		`DELETE FROM categories WHERE is_default=1`,
 		`INSERT INTO categories(name, type, is_default) VALUES
 			('Mercado', 'expense', 1),

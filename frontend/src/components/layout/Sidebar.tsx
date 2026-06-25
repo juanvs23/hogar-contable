@@ -3,8 +3,8 @@ import {
   LayoutDashboard,
   ArrowRightLeft,
   Tags,
-  FileBarChart,
   PiggyBank,
+  FileBarChart,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -12,6 +12,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/transactions", label: "Transacciones", icon: ArrowRightLeft },
   { to: "/categories", label: "Categorías", icon: Tags },
+  { to: "/savings", label: "Ahorros", icon: PiggyBank },
   { to: "/reports", label: "Reportes", icon: FileBarChart },
 ]
 

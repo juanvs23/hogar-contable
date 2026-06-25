@@ -101,8 +101,12 @@ func (r *SQLiteTransactionRepo) Delete(id int64) error {
 	return nil
 }
 
-func (r *SQLiteTransactionRepo) GetTotals(dateFrom, dateTo string) (income, expenses float64, err error) {
-	query := `SELECT type, COALESCE(SUM(amount_bs), 0) FROM transactions WHERE 1=1`
+func (r *SQLiteTransactionRepo) GetTotals(dateFrom, dateTo string) (incomeBs, expensesBs, incomeUsd, expensesUsd, incomeUsdt, expensesUsdt float64, err error) {
+	query := `SELECT type,
+		COALESCE(SUM(amount_bs), 0),
+		COALESCE(SUM(amount_usd_bcv), 0),
+		COALESCE(SUM(amount_usdt), 0)
+		FROM transactions WHERE 1=1`
 	var args []any
 
 	if dateFrom != "" {
@@ -117,24 +121,70 @@ func (r *SQLiteTransactionRepo) GetTotals(dateFrom, dateTo string) (income, expe
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
-		return 0, 0, fmt.Errorf("get totals: %w", err)
+		return 0, 0, 0, 0, 0, 0, fmt.Errorf("get totals: %w", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var tType string
-		var total float64
-		if err := rows.Scan(&tType, &total); err != nil {
-			return 0, 0, fmt.Errorf("scan total: %w", err)
+		var bsTotal, usdTotal, usdtTotal float64
+		if err := rows.Scan(&tType, &bsTotal, &usdTotal, &usdtTotal); err != nil {
+			return 0, 0, 0, 0, 0, 0, fmt.Errorf("scan total: %w", err)
 		}
 		switch tType {
 		case "income":
-			income = total
+			incomeBs = bsTotal
+			incomeUsd = usdTotal
+			incomeUsdt = usdtTotal
 		case "expense":
-			expenses = total
+			expensesBs = bsTotal
+			expensesUsd = usdTotal
+			expensesUsdt = usdtTotal
 		}
 	}
-	return income, expenses, nil
+	return incomeBs, expensesBs, incomeUsd, expensesUsd, incomeUsdt, expensesUsdt, nil
+}
+
+func (r *SQLiteTransactionRepo) GetCategoryTotals(dateFrom, dateTo string, txType string) ([]core.CategoryTotal, error) {
+	query := `SELECT COALESCE(c.id, 0), COALESCE(c.name, 'Sin categoría'),
+		COALESCE(SUM(t.amount_bs), 0),
+		COALESCE(SUM(t.amount_usd_bcv), 0),
+		COALESCE(SUM(t.amount_usdt), 0)
+		FROM transactions t
+		LEFT JOIN categories c ON c.id = t.category_id
+		WHERE 1=1`
+	var args []any
+
+	if dateFrom != "" {
+		query += " AND t.date >= ?"
+		args = append(args, dateFrom)
+	}
+	if dateTo != "" {
+		query += " AND t.date <= ?"
+		args = append(args, dateTo)
+	}
+	if txType != "" {
+		query += " AND t.type = ?"
+		args = append(args, txType)
+	}
+	query += ` GROUP BY COALESCE(c.id, 0)
+		ORDER BY COALESCE(SUM(t.amount_usd_bcv), 0) DESC`
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("get category totals: %w", err)
+	}
+	defer rows.Close()
+
+	results := make([]core.CategoryTotal, 0)
+	for rows.Next() {
+		var ct core.CategoryTotal
+		if err := rows.Scan(&ct.CategoryID, &ct.CategoryName, &ct.TotalBs, &ct.TotalUsd, &ct.TotalUsdt); err != nil {
+			return nil, fmt.Errorf("scan category total: %w", err)
+		}
+		results = append(results, ct)
+	}
+	return results, nil
 }
 
 type SQLiteCategoryRepo struct {
@@ -323,6 +373,73 @@ func scanNullableString(ns sql.NullString) *string {
 		return &ns.String
 	}
 	return nil
+}
+
+// ---- Savings ----
+
+type SQLiteSavingRepo struct {
+	db *sql.DB
+}
+
+func NewSavingRepo(db *sql.DB) SavingRepository {
+	return &SQLiteSavingRepo{db: db}
+}
+
+func (r *SQLiteSavingRepo) Create(s *core.Saving) (int64, error) {
+	result, err := r.db.Exec(
+		`INSERT INTO savings (description, amount_bs, amount_usd) VALUES (?, ?, ?)`,
+		s.Description, s.AmountBs, s.AmountUsd,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("create saving: %w", err)
+	}
+	return result.LastInsertId()
+}
+
+func (r *SQLiteSavingRepo) List() ([]core.Saving, error) {
+	rows, err := r.db.Query(`SELECT id, description, amount_bs, amount_usd, created_at FROM savings ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, fmt.Errorf("list savings: %w", err)
+	}
+	defer rows.Close()
+
+	savings := make([]core.Saving, 0)
+	for rows.Next() {
+		var s core.Saving
+		if err := rows.Scan(&s.ID, &s.Description, &s.AmountBs, &s.AmountUsd, &s.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan saving: %w", err)
+		}
+		savings = append(savings, s)
+	}
+	return savings, nil
+}
+
+func (r *SQLiteSavingRepo) Update(s *core.Saving) error {
+	_, err := r.db.Exec(
+		`UPDATE savings SET description=?, amount_bs=?, amount_usd=? WHERE id=?`,
+		s.Description, s.AmountBs, s.AmountUsd, s.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("update saving %d: %w", s.ID, err)
+	}
+	return nil
+}
+
+func (r *SQLiteSavingRepo) Delete(id int64) error {
+	_, err := r.db.Exec(`DELETE FROM savings WHERE id=?`, id)
+	if err != nil {
+		return fmt.Errorf("delete saving %d: %w", id, err)
+	}
+	return nil
+}
+
+func (r *SQLiteSavingRepo) GetTotal() (totalBs, totalUsd float64, err error) {
+	row := r.db.QueryRow(`SELECT COALESCE(SUM(amount_bs), 0), COALESCE(SUM(amount_usd), 0) FROM savings`)
+	err = row.Scan(&totalBs, &totalUsd)
+	if err != nil {
+		return 0, 0, fmt.Errorf("get saving total: %w", err)
+	}
+	return totalBs, totalUsd, nil
 }
 
 // Ensure strings import is used

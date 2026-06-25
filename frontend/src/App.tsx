@@ -4,6 +4,7 @@ import Layout from "./components/layout/Layout"
 import DashboardPage from "./features/dashboard/DashboardPage"
 import TransactionsPage from "./features/transactions/TransactionsPage"
 import CategoriesPage from "./features/categories/CategoriesPage"
+import SavingsPage from "./features/savings/SavingsPage"
 import ReportsPage from "./features/reports/ReportsPage"
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/savings" element={<SavingsPage />} />
             <Route path="/reports" element={<ReportsPage />} />
           </Route>
         </Routes>

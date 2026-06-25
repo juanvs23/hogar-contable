@@ -8,7 +8,8 @@ type TransactionRepository interface {
 	List(dateFrom, dateTo string, txType string) ([]core.Transaction, error)
 	Update(tx *core.Transaction) error
 	Delete(id int64) error
-	GetTotals(dateFrom, dateTo string) (income, expenses float64, err error)
+	GetTotals(dateFrom, dateTo string) (incomeBs, expensesBs, incomeUsd, expensesUsd, incomeUsdt, expensesUsdt float64, err error)
+	GetCategoryTotals(dateFrom, dateTo string, txType string) ([]core.CategoryTotal, error)
 }
 
 type CategoryRepository interface {
@@ -22,6 +23,14 @@ type ClosureRepository interface {
 	Create(cl *core.Closure) (int64, error)
 	GetByPeriod(period string, clType core.ClosureType) (*core.Closure, error)
 	List(limit int) ([]core.Closure, error)
+}
+
+type SavingRepository interface {
+	Create(s *core.Saving) (int64, error)
+	List() ([]core.Saving, error)
+	Update(s *core.Saving) error
+	Delete(id int64) error
+	GetTotal() (totalBs, totalUsd float64, err error)
 }
 
 type ExchangeRateRepository interface {

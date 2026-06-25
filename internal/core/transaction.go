@@ -21,6 +21,14 @@ type Transaction struct {
 	CreatedAt    string          `json:"created_at"`
 }
 
+type CategoryTotal struct {
+	CategoryID   int64   `json:"category_id"`
+	CategoryName string  `json:"category_name"`
+	TotalBs      float64 `json:"total_bs"`
+	TotalUsd     float64 `json:"total_usd"`
+	TotalUsdt    float64 `json:"total_usdt"`
+}
+
 type Category struct {
 	ID        int64  `json:"id"`
 	Name      string `json:"name"`

@@ -20,6 +20,8 @@ type App struct {
 	db               *database.DB
 	transactionSvc   *service.TransactionService
 	exchangeSvc      *service.ExchangeService
+	closureSvc       *service.ClosureService
+	savingSvc        *service.SavingService
 }
 
 // NewApp creates a new App application struct
@@ -47,10 +49,14 @@ func (a *App) startup(ctx context.Context) {
 	txRepo := repository.NewTransactionRepo(db.DB)
 	catRepo := repository.NewCategoryRepo(db.DB)
 	rateRepo := repository.NewExchangeRateRepo(db.DB)
+	closureRepo := repository.NewClosureRepo(db.DB)
+	savingRepo := repository.NewSavingRepo(db.DB)
 
 	// Initialize services
 	a.transactionSvc = service.NewTransactionService(txRepo, catRepo)
 	a.exchangeSvc = service.NewExchangeService(rateRepo, exchange.NewClient(""))
+	a.closureSvc = service.NewClosureService(txRepo, closureRepo)
+	a.savingSvc = service.NewSavingService(savingRepo)
 
 	log.Println("hogar-contable started successfully")
 }
@@ -131,6 +137,14 @@ func (a *App) GetYearlySummary(year string) (*service.MonthlySummary, error) {
 	return a.transactionSvc.GetYearlySummary(year)
 }
 
+func (a *App) GetExpensesByCategory(year, month string) ([]core.CategoryTotal, error) {
+	return a.transactionSvc.GetExpensesByCategory(year, month)
+}
+
+func (a *App) GetIncomeByCategory(year, month string) ([]core.CategoryTotal, error) {
+	return a.transactionSvc.GetIncomeByCategory(year, month)
+}
+
 // --- Categories ---
 
 func (a *App) ListCategories(txType string) ([]core.Category, error) {
@@ -149,6 +163,38 @@ func (a *App) UpdateCategory(id int64, name, txType string) error {
 
 func (a *App) DeleteCategory(id int64) error {
 	return a.transactionSvc.DeleteCategory(id)
+}
+
+// --- Closures ---
+
+func (a *App) CloseMonth(year, month string) (*service.ClosureResult, error) {
+	return a.closureSvc.CloseMonth(year, month)
+}
+
+func (a *App) IsMonthClosed(year, month string) (bool, error) {
+	return a.closureSvc.IsMonthClosed(year, month)
+}
+
+// --- Savings ---
+
+func (a *App) CreateSaving(description string, amountBs, amountUsd float64) (int64, error) {
+	return a.savingSvc.Create(&core.Saving{Description: description, AmountBs: amountBs, AmountUsd: amountUsd})
+}
+
+func (a *App) ListSavings() ([]core.Saving, error) {
+	return a.savingSvc.List()
+}
+
+func (a *App) UpdateSaving(id int64, description string, amountBs, amountUsd float64) error {
+	return a.savingSvc.Update(&core.Saving{ID: id, Description: description, AmountBs: amountBs, AmountUsd: amountUsd})
+}
+
+func (a *App) DeleteSaving(id int64) error {
+	return a.savingSvc.Delete(id)
+}
+
+func (a *App) GetSavingTotal() (*service.SavingTotal, error) {
+	return a.savingSvc.GetTotal()
 }
 
 // --- Exchange Rates ---

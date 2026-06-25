@@ -69,10 +69,34 @@ function formatCurrency(value: number, currency: string): string {
   }
 }
 
+const MONTHS_ES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+]
+
 const currencyLabels: Record<CurrencyType, string> = {
   bs: "Bs",
   usd_bcv: "USD BCV",
   usdt: "USDT",
+}
+
+function todayParts(): { year: string; month: number; day: number } {
+  const now = new Date()
+  return {
+    year: String(now.getFullYear()),
+    month: now.getMonth(),
+    day: now.getDate(),
+  }
+}
+
+function dateFromParts(year: string, month: number, day: number): string {
+  const m = String(month + 1).padStart(2, "0")
+  const d = String(day).padStart(2, "0")
+  return `${year}-${m}-${d}`
+}
+
+function daysInMonth(year: string, month: number): number {
+  return new Date(Number(year), month + 1, 0).getDate()
 }
 
 export default function TransactionDialog({
@@ -82,12 +106,15 @@ export default function TransactionDialog({
   onSave,
   saving,
 }: TransactionDialogProps) {
+  const initParts = todayParts()
   const [type, setType] = useState<"income" | "expense">("expense")
   const [description, setDescription] = useState("")
   const [currency, setCurrency] = useState<CurrencyType>("bs")
   const [amountInput, setAmountInput] = useState("")
   const [categoryId, setCategoryId] = useState<number | null>(null)
-  const [date, setDate] = useState(todayStr())
+  const [dateYear, setDateYear] = useState(initParts.year)
+  const [dateMonth, setDateMonth] = useState(initParts.month)
+  const [dateDay, setDateDay] = useState(initParts.day)
   const [errors, setErrors] = useState<FormErrors>({})
   const [rates, setRates] = useState<ExchangeRates | null>(null)
   const [ratesLoading, setRatesLoading] = useState(false)
@@ -149,20 +176,26 @@ export default function TransactionDialog({
   // Reset or pre-fill form on open
   useEffect(() => {
     if (open && editingTransaction) {
+      const [y, m, d] = editingTransaction.date.split("-")
       setType(editingTransaction.type)
       setDescription(editingTransaction.description)
       setCurrency("bs")
       setAmountInput(String(editingTransaction.amount_bs))
       setCategoryId(editingTransaction.category_id)
-      setDate(editingTransaction.date)
+      setDateYear(y)
+      setDateMonth(Number(m) - 1)
+      setDateDay(Number(d))
       setErrors({})
     } else if (open) {
+      const p = todayParts()
       setType("expense")
       setDescription("")
       setCurrency("bs")
       setAmountInput("")
       setCategoryId(null)
-      setDate(todayStr())
+      setDateYear(p.year)
+      setDateMonth(p.month)
+      setDateDay(p.day)
       setErrors({})
     }
   }, [open, editingTransaction])
@@ -210,7 +243,7 @@ export default function TransactionDialog({
       rate_official: rates?.official ?? 0,
       rate_p2p: rates?.p2p ?? 0,
       category_id: categoryId,
-      date,
+      date: dateFromParts(dateYear, dateMonth, dateDay),
     })
   }
 
@@ -363,18 +396,50 @@ export default function TransactionDialog({
             />
           </div>
 
-          {/* Date */}
+          {/* Date — dropdowns */}
           <div>
-            <label htmlFor="tx-date" className="text-sm font-medium mb-1.5 block">
-              Fecha
-            </label>
-            <input
-              id="tx-date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
-            />
+            <label className="text-sm font-medium mb-1.5 block">Fecha</label>
+            <div className="flex gap-2">
+              <select
+                value={dateDay}
+                onChange={(e) => setDateDay(Number(e.target.value))}
+                className="h-8 w-16 rounded-md border border-input bg-background text-foreground px-1 text-sm text-center cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
+              >
+                {Array.from({ length: daysInMonth(dateYear, dateMonth) }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={d} className="bg-background text-foreground">{String(d).padStart(2, "0")}</option>
+                ))}
+              </select>
+
+              <select
+                value={dateMonth}
+                onChange={(e) => {
+                  const newM = Number(e.target.value)
+                  const maxDay = daysInMonth(dateYear, newM)
+                  setDateMonth(newM)
+                  if (dateDay > maxDay) setDateDay(maxDay)
+                }}
+                className="h-8 flex-1 rounded-md border border-input bg-background text-foreground px-1 text-sm cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
+              >
+                {MONTHS_ES.map((name, i) => (
+                  <option key={i} value={i} className="bg-background text-foreground">{name}</option>
+                ))}
+              </select>
+
+              <select
+                value={dateYear}
+                onChange={(e) => {
+                  const newY = e.target.value
+                  const maxDay = daysInMonth(newY, dateMonth)
+                  setDateYear(newY)
+                  if (dateDay > maxDay) setDateDay(maxDay)
+                }}
+                className="h-8 w-20 rounded-md border border-input bg-background text-foreground px-1 text-sm text-center font-bold cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring tabular-nums"
+              >
+                {Array.from({ length: 10 }, (_, i) => String(Number(dateYear) - 5 + i)).map((y) => (
+                  <option key={y} value={y} className="bg-background text-foreground">{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Actions */}

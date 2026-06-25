@@ -50,15 +50,20 @@ func (s *TransactionService) Delete(id int64) error {
 }
 
 type MonthlySummary struct {
-	Month         string  `json:"month"`
-	TotalIncome   float64 `json:"total_income"`
-	TotalExpenses float64 `json:"total_expenses"`
-	Balance       float64 `json:"balance"`
+	Month             string  `json:"month"`
+	TotalIncomeBs     float64 `json:"total_income_bs"`
+	TotalExpensesBs   float64 `json:"total_expenses_bs"`
+	BalanceBs         float64 `json:"balance_bs"`
+	TotalIncomeUsd    float64 `json:"total_income_usd"`
+	TotalExpensesUsd  float64 `json:"total_expenses_usd"`
+	BalanceUsd        float64 `json:"balance_usd"`
+	TotalIncomeUsdt   float64 `json:"total_income_usdt"`
+	TotalExpensesUsdt float64 `json:"total_expenses_usdt"`
+	BalanceUsdt       float64 `json:"balance_usdt"`
 }
 
 func (s *TransactionService) GetMonthlySummary(year, month string) (*MonthlySummary, error) {
 	dateFrom := fmt.Sprintf("%s-%s-01", year, month)
-	// Calculate last day of month
 	t, err := time.Parse("2006-01-02", dateFrom)
 	if err != nil {
 		return nil, fmt.Errorf("invalid date: %w", err)
@@ -66,16 +71,22 @@ func (s *TransactionService) GetMonthlySummary(year, month string) (*MonthlySumm
 	lastDay := t.AddDate(0, 1, -1)
 	dateTo := lastDay.Format("2006-01-02")
 
-	income, expenses, err := s.txRepo.GetTotals(dateFrom, dateTo)
+	incomeBs, expensesBs, incomeUsd, expensesUsd, incomeUsdt, expensesUsdt, err := s.txRepo.GetTotals(dateFrom, dateTo)
 	if err != nil {
 		return nil, fmt.Errorf("get totals: %w", err)
 	}
 
 	return &MonthlySummary{
-		Month:         fmt.Sprintf("%s-%s", year, month),
-		TotalIncome:   income,
-		TotalExpenses: expenses,
-		Balance:       income - expenses,
+		Month:             fmt.Sprintf("%s-%s", year, month),
+		TotalIncomeBs:     incomeBs,
+		TotalExpensesBs:   expensesBs,
+		BalanceBs:         incomeBs - expensesBs,
+		TotalIncomeUsd:    incomeUsd,
+		TotalExpensesUsd:  expensesUsd,
+		BalanceUsd:        incomeUsd - expensesUsd,
+		TotalIncomeUsdt:   incomeUsdt,
+		TotalExpensesUsdt: expensesUsdt,
+		BalanceUsdt:       incomeUsdt - expensesUsdt,
 	}, nil
 }
 
@@ -83,27 +94,47 @@ func (s *TransactionService) GetYearlySummary(year string) (*MonthlySummary, err
 	dateFrom := fmt.Sprintf("%s-01-01", year)
 	dateTo := fmt.Sprintf("%s-12-31", year)
 
-	income, expenses, err := s.txRepo.GetTotals(dateFrom, dateTo)
+	incomeBs, expensesBs, incomeUsd, expensesUsd, incomeUsdt, expensesUsdt, err := s.txRepo.GetTotals(dateFrom, dateTo)
 	if err != nil {
 		return nil, fmt.Errorf("get yearly totals: %w", err)
 	}
 
 	return &MonthlySummary{
-		Month:         year,
-		TotalIncome:   income,
-		TotalExpenses: expenses,
-		Balance:       income - expenses,
+		Month:             year,
+		TotalIncomeBs:     incomeBs,
+		TotalExpensesBs:   expensesBs,
+		BalanceBs:         incomeBs - expensesBs,
+		TotalIncomeUsd:    incomeUsd,
+		TotalExpensesUsd:  expensesUsd,
+		BalanceUsd:        incomeUsd - expensesUsd,
+		TotalIncomeUsdt:   incomeUsdt,
+		TotalExpensesUsdt: expensesUsdt,
+		BalanceUsdt:       incomeUsdt - expensesUsdt,
 	}, nil
 }
 
-type CategorySummary struct {
-	Category string  `json:"category"`
-	Total    float64 `json:"total"`
+func (s *TransactionService) GetExpensesByCategory(year, month string) ([]core.CategoryTotal, error) {
+	dateFrom := fmt.Sprintf("%s-%s-01", year, month)
+	t, err := time.Parse("2006-01-02", dateFrom)
+	if err != nil {
+		return nil, fmt.Errorf("invalid date: %w", err)
+	}
+	lastDay := t.AddDate(0, 1, -1)
+	dateTo := lastDay.Format("2006-01-02")
+
+	return s.txRepo.GetCategoryTotals(dateFrom, dateTo, "expense")
 }
 
-func (s *TransactionService) GetExpensesByCategory(year, month string) ([]CategorySummary, error) {
-	// TODO: implement grouping query in the repository
-	return nil, fmt.Errorf("not implemented yet")
+func (s *TransactionService) GetIncomeByCategory(year, month string) ([]core.CategoryTotal, error) {
+	dateFrom := fmt.Sprintf("%s-%s-01", year, month)
+	t, err := time.Parse("2006-01-02", dateFrom)
+	if err != nil {
+		return nil, fmt.Errorf("invalid date: %w", err)
+	}
+	lastDay := t.AddDate(0, 1, -1)
+	dateTo := lastDay.Format("2006-01-02")
+
+	return s.txRepo.GetCategoryTotals(dateFrom, dateTo, "income")
 }
 
 // GetCategories returns all categories filtered by type (income/expense).

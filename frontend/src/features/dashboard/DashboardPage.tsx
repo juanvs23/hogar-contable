@@ -1,18 +1,12 @@
 import { useState, useEffect } from "react"
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react"
 import { GetMonthlySummary } from "../../../wailsjs/go/main/App"
+import { service } from "../../../wailsjs/go/models"
 
-interface Summary {
-  month: string
-  total_income: number
-  total_expenses: number
-  balance: number
-}
-
-function formatBs(value: number): string {
-  return new Intl.NumberFormat("es-VE", {
+function formatUsd(value: number): string {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "VES",
+    currency: "USD",
     minimumFractionDigits: 2,
   }).format(value)
 }
@@ -24,7 +18,7 @@ function getCurrentMonth(): string {
 }
 
 export default function DashboardPage() {
-  const [summary, setSummary] = useState<Summary | null>(null)
+  const [summary, setSummary] = useState<service.MonthlySummary | null>(null)
   const [currentMonth] = useState(getCurrentMonth)
 
   useEffect(() => {
@@ -32,26 +26,33 @@ export default function DashboardPage() {
     GetMonthlySummary(year, month).then(setSummary).catch(console.error)
   }, [currentMonth])
 
+  const income = summary?.total_income_usd ?? 0
+  const expenses = summary?.total_expenses_usd ?? 0
+  const balance = summary?.balance_usd ?? 0
+
   const cards = [
     {
       title: "Ingresos",
-      value: summary ? formatBs(summary.total_income) : "Bs 0,00",
+      value: formatUsd(income),
+      sub: `Bs ${summary?.total_income_bs.toFixed(2) ?? "0,00"}`,
       icon: TrendingUp,
       color: "text-chart-2",
       bg: "bg-chart-2/10",
     },
     {
       title: "Gastos",
-      value: summary ? formatBs(summary.total_expenses) : "Bs 0,00",
+      value: formatUsd(expenses),
+      sub: `Bs ${summary?.total_expenses_bs.toFixed(2) ?? "0,00"}`,
       icon: TrendingDown,
       color: "text-destructive",
       bg: "bg-destructive/10",
     },
     {
       title: "Balance",
-      value: summary ? formatBs(summary.balance) : "Bs 0,00",
+      value: formatUsd(balance),
+      sub: `Bs ${summary?.balance_bs.toFixed(2) ?? "0,00"}`,
       icon: Wallet,
-      color: summary?.balance && summary.balance >= 0 ? "text-chart-1" : "text-destructive",
+      color: balance >= 0 ? "text-chart-1" : "text-destructive",
       bg: "bg-card",
     },
   ]
@@ -77,14 +78,15 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">{card.title}</p>
               <p className={`text-xl font-bold ${card.color}`}>{card.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{card.sub}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Placeholder for charts and recent transactions */}
+      {/* Recent transactions placeholder */}
       <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-        <p className="text-sm">Aquí irán los gráficos y transacciones recientes</p>
+        <p className="text-sm">Aquí irán las transacciones recientes</p>
       </div>
     </div>
   )
