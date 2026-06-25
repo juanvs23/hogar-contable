@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { Plus } from "lucide-react"
+import { Plus, Lock, Unlock, FileDown, FileUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import TransactionFilters from "./components/TransactionFilters"
 import TransactionList from "./components/TransactionList"
@@ -10,6 +10,10 @@ import {
   CreateTransaction,
   UpdateTransaction,
   DeleteTransaction,
+  CloseDay,
+  IsDayClosed,
+  ExportTransactionsToExcel,
+  ImportTransactionsFromCSV,
 } from "../../../wailsjs/go/main/App"
 import { core } from "../../../wailsjs/go/models"
 
@@ -35,6 +39,29 @@ export default function TransactionsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTx, setEditingTx] = useState<EditingTransaction | null>(null)
   const [saving, setSaving] = useState(false)
+
+  // Daily closure
+  const today = new Date()
+  const defaultDay = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`
+  const [closeDate, setCloseDate] = useState(defaultDay)
+  const [dayClosed, setDayClosed] = useState(false)
+  const [closingDay, setClosingDay] = useState(false)
+
+  useEffect(() => {
+    IsDayClosed(closeDate).then(setDayClosed).catch(() => setDayClosed(false))
+  }, [closeDate])
+
+  const handleCloseDay = async () => {
+    setClosingDay(true)
+    try {
+      await CloseDay(closeDate)
+      setDayClosed(true)
+    } catch (err) {
+      console.error("Failed to close day:", err)
+    } finally {
+      setClosingDay(false)
+    }
+  }
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
@@ -107,6 +134,19 @@ export default function TransactionsPage() {
     }
   }
 
+  const handleExport = async () => {
+    try {
+      const { from, to } = monthRange(month)
+      const type = txType === "all" ? "" : txType
+      const path = await ExportTransactionsToExcel(from, to, type)
+      if (path) {
+        console.log("Exported to:", path)
+      }
+    } catch (err) {
+      console.error("Failed to export:", err)
+    }
+  }
+
   const handleEdit = (tx: core.Transaction) => {
     setEditingTx({
       id: tx.id,
@@ -133,10 +173,20 @@ export default function TransactionsPage() {
             Registra y administra tus ingresos y gastos
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="size-4 mr-2" />
-          Nueva Transacción
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => ImportTransactionsFromCSV().catch(console.error)}>
+            <FileUp className="size-4 mr-1.5" />
+            Importar
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <FileDown className="size-4 mr-1.5" />
+            Exportar
+          </Button>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="size-4 mr-2" />
+            Nueva Transacción
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -146,6 +196,30 @@ export default function TransactionsPage() {
         onMonthChange={setMonth}
         onTypeChange={setTxType}
       />
+
+      {/* Daily closure */}
+      <div className="flex items-center gap-3 flex-wrap rounded-lg border border-border bg-card px-4 py-2.5">
+        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Cierre diario</span>
+        <input
+          type="date"
+          value={closeDate}
+          onChange={(e) => setCloseDate(e.target.value)}
+          className="h-7 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
+        />
+        <Button
+          size="xs"
+          variant={dayClosed ? "secondary" : "default"}
+          disabled={dayClosed || closingDay}
+          onClick={handleCloseDay}
+        >
+          {dayClosed ? (
+            <><Lock className="size-3 mr-1" /> Cerrado</>
+          ) : (
+            <><Unlock className="size-3 mr-1" /> Cerrar día</>
+          )}
+        </Button>
+        {closingDay && <span className="text-xs text-muted-foreground">Cerrando...</span>}
+      </div>
 
       {/* Transaction count */}
       {!loading && (

@@ -146,6 +146,20 @@ export namespace service {
 	        this.closed_at = source["closed_at"];
 	    }
 	}
+	export class ImportResult {
+	    imported: number;
+	    errors?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ImportResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.imported = source["imported"];
+	        this.errors = source["errors"];
+	    }
+	}
 	export class MonthlySummary {
 	    month: string;
 	    total_income_bs: number;

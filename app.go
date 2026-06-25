@@ -6,12 +6,15 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"hogar-contable/internal/core"
 	"hogar-contable/internal/database"
 	"hogar-contable/internal/exchange"
 	"hogar-contable/internal/repository"
 	"hogar-contable/internal/service"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct — entry point for all Wails commands
@@ -22,6 +25,7 @@ type App struct {
 	exchangeSvc      *service.ExchangeService
 	closureSvc       *service.ClosureService
 	savingSvc        *service.SavingService
+	exportSvc        *service.ExportService
 }
 
 // NewApp creates a new App application struct
@@ -57,6 +61,7 @@ func (a *App) startup(ctx context.Context) {
 	a.exchangeSvc = service.NewExchangeService(rateRepo, exchange.NewClient(""))
 	a.closureSvc = service.NewClosureService(txRepo, closureRepo)
 	a.savingSvc = service.NewSavingService(savingRepo)
+	a.exportSvc = service.NewExportService(txRepo)
 
 	log.Println("hogar-contable started successfully")
 }
@@ -175,6 +180,14 @@ func (a *App) IsMonthClosed(year, month string) (bool, error) {
 	return a.closureSvc.IsMonthClosed(year, month)
 }
 
+func (a *App) CloseDay(date string) (*service.ClosureResult, error) {
+	return a.closureSvc.CloseDay(date)
+}
+
+func (a *App) IsDayClosed(date string) (bool, error) {
+	return a.closureSvc.IsDayClosed(date)
+}
+
 // --- Savings ---
 
 func (a *App) CreateSaving(description string, amountBs, amountUsd float64) (int64, error) {
@@ -195,6 +208,187 @@ func (a *App) DeleteSaving(id int64) error {
 
 func (a *App) GetSavingTotal() (*service.SavingTotal, error) {
 	return a.savingSvc.GetTotal()
+}
+
+// --- Export ---
+
+func (a *App) ExportTransactionsToExcel(dateFrom, dateTo, txType string) (string, error) {
+	dir := filepath.Join(getDataDir(), "hogar-contable", "exports")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", fmt.Errorf("create export dir: %w", err)
+	}
+
+	fileName := fmt.Sprintf("transacciones_%s.xlsx", time.Now().Format("2006-01-02_150405"))
+	filePath := filepath.Join(dir, fileName)
+
+	if err := a.exportSvc.ExportTransactions(filePath, dateFrom, dateTo, txType); err != nil {
+		return "", err
+	}
+
+	// Open native save dialog
+	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		DefaultFilename:  fileName,
+		Title:            "Guardar exportación",
+		Filters:          []runtime.FileFilter{{DisplayName: "Excel (.xlsx)", Pattern: "*.xlsx"}},
+	})
+	if err != nil {
+		return "", fmt.Errorf("save dialog: %w", err)
+	}
+
+	if savePath == "" {
+		return "", nil // user cancelled
+	}
+
+	// Copy from temp to chosen location
+	input, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("read temp file: %w", err)
+	}
+	if err := os.WriteFile(savePath, input, 0644); err != nil {
+		return "", fmt.Errorf("write file: %w", err)
+	}
+
+	return savePath, nil
+}
+
+func (a *App) ExportReportToExcel(year, month string) (string, error) {
+	summary, err := a.transactionSvc.GetMonthlySummary(year, month)
+	if err != nil {
+		return "", fmt.Errorf("get summary: %w", err)
+	}
+
+	expenseCats, err := a.transactionSvc.GetExpensesByCategory(year, month)
+	if err != nil {
+		return "", fmt.Errorf("get expense categories: %w", err)
+	}
+
+	incomeCats, err := a.transactionSvc.GetIncomeByCategory(year, month)
+	if err != nil {
+		return "", fmt.Errorf("get income categories: %w", err)
+	}
+
+	dir := filepath.Join(getDataDir(), "hogar-contable", "exports")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", fmt.Errorf("create export dir: %w", err)
+	}
+
+	fileName := fmt.Sprintf("reporte_%s-%s.xlsx", year, month)
+	filePath := filepath.Join(dir, fileName)
+
+	if err := a.exportSvc.ExportMonthlyReport(filePath, year, month, summary, expenseCats, incomeCats); err != nil {
+		return "", err
+	}
+
+	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		DefaultFilename: fileName,
+		Title:           "Guardar reporte",
+		Filters:         []runtime.FileFilter{{DisplayName: "Excel (.xlsx)", Pattern: "*.xlsx"}},
+	})
+	if err != nil {
+		return "", fmt.Errorf("save dialog: %w", err)
+	}
+	if savePath == "" {
+		return "", nil
+	}
+
+	input, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("read temp file: %w", err)
+	}
+	if err := os.WriteFile(savePath, input, 0644); err != nil {
+		return "", fmt.Errorf("write file: %w", err)
+	}
+
+	return savePath, nil
+}
+
+func (a *App) ExportSavingsToExcel() (string, error) {
+	savings, err := a.savingSvc.List()
+	if err != nil {
+		return "", fmt.Errorf("list savings: %w", err)
+	}
+
+	dir := filepath.Join(getDataDir(), "hogar-contable", "exports")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", fmt.Errorf("create export dir: %w", err)
+	}
+
+	fileName := fmt.Sprintf("ahorros_%s.xlsx", time.Now().Format("2006-01-02"))
+	filePath := filepath.Join(dir, fileName)
+
+	if err := a.exportSvc.ExportSavings(filePath, savings); err != nil {
+		return "", err
+	}
+
+	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		DefaultFilename: fileName,
+		Title:           "Guardar ahorros",
+		Filters:         []runtime.FileFilter{{DisplayName: "Excel (.xlsx)", Pattern: "*.xlsx"}},
+	})
+	if err != nil {
+		return "", fmt.Errorf("save dialog: %w", err)
+	}
+	if savePath == "" {
+		return "", nil
+	}
+
+	input, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("read temp file: %w", err)
+	}
+	if err := os.WriteFile(savePath, input, 0644); err != nil {
+		return "", fmt.Errorf("write file: %w", err)
+	}
+
+	return savePath, nil
+}
+
+func (a *App) ImportTransactionsFromCSV() (*service.ImportResult, error) {
+	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title:   "Importar transacciones",
+		Filters: []runtime.FileFilter{{DisplayName: "CSV (.csv)", Pattern: "*.csv"}},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("open dialog: %w", err)
+	}
+	if filePath == "" {
+		return &service.ImportResult{Imported: 0}, nil // user cancelled
+	}
+
+	return a.exportSvc.ImportTransactionsFromCSV(filePath)
+}
+
+// --- Backup ---
+
+func (a *App) BackupDatabase() (string, error) {
+	dbPath := a.db.Path
+	if dbPath == "" {
+		return "", fmt.Errorf("database path not set")
+	}
+
+	fileName := fmt.Sprintf("hogar-contable-backup_%s.db", time.Now().Format("2006-01-02_150405"))
+
+	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		DefaultFilename: fileName,
+		Title:           "Guardar backup de la base de datos",
+		Filters:         []runtime.FileFilter{{DisplayName: "Base de datos SQLite (.db)", Pattern: "*.db"}},
+	})
+	if err != nil {
+		return "", fmt.Errorf("save dialog: %w", err)
+	}
+	if savePath == "" {
+		return "", nil // cancelled
+	}
+
+	input, err := os.ReadFile(dbPath)
+	if err != nil {
+		return "", fmt.Errorf("read database: %w", err)
+	}
+	if err := os.WriteFile(savePath, input, 0644); err != nil {
+		return "", fmt.Errorf("write backup: %w", err)
+	}
+
+	return savePath, nil
 }
 
 // --- Exchange Rates ---

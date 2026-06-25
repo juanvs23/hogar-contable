@@ -37,7 +37,12 @@
 - [ ] Testing E2E con Playwright
 - [ ] Pruebas en Windows 11
 
-## Fase 6: Migración y portabilidad (pendiente)
+## Fase 6: Guía de uso interactiva (pendiente)
+- [x] Botón de ayuda (?) en el header con modal contextual por ruta
+- [ ] Capturas de pantalla ilustrativas para cada sección
+- [ ] Video o GIF de uso básico (opcional)
+
+## Fase 7: Migración y portabilidad (pendiente)
 - [ ] Documentar ubicación de la base de datos SQLite (`~/.local/share/hogar-contable/`)
 - [ ] Script de backup/restore de la DB
 - [ ] Procedimiento de migración a nueva PC:

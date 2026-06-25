@@ -4,7 +4,7 @@ import {
 } from "recharts"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Lock, Unlock, TrendingUp, TrendingDown, Award } from "lucide-react"
+import { Lock, Unlock, TrendingUp, TrendingDown, Award, FileDown, Database } from "lucide-react"
 import {
   GetMonthlySummary,
   GetYearlySummary,
@@ -12,6 +12,8 @@ import {
   GetIncomeByCategory,
   CloseMonth,
   IsMonthClosed,
+  ExportReportToExcel,
+  BackupDatabase,
 } from "../../../wailsjs/go/main/App"
 import { service, core } from "../../../wailsjs/go/models"
 
@@ -231,6 +233,14 @@ export default function ReportsPage() {
           )}
         </Button>
         {closing && <span className="text-xs text-muted-foreground">Cerrando...</span>}
+        <Button variant="outline" size="sm" onClick={() => ExportReportToExcel(selYear, mStr).catch(console.error)}>
+          <FileDown className="size-4 mr-1.5" />
+          Exportar
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => BackupDatabase().catch(console.error)}>
+          <Database className="size-4 mr-1.5" />
+          Backup
+        </Button>
       </div>
 
       {/* Comparar */}

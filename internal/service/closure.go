@@ -72,6 +72,47 @@ func (s *ClosureService) CloseMonth(year, month string) (*ClosureResult, error) 
 	}, nil
 }
 
+func (s *ClosureService) CloseDay(date string) (*ClosureResult, error) {
+	incomeBs, expensesBs, incomeUsd, expensesUsd, incomeUsdt, expensesUsdt, err := s.txRepo.GetTotals(date, date)
+	if err != nil {
+		return nil, fmt.Errorf("get totals: %w", err)
+	}
+
+	cl := &core.Closure{
+		Type:          core.DailyClosure,
+		Period:        date,
+		TotalIncome:   incomeUsd,
+		TotalExpenses: expensesUsd,
+		Balance:       incomeUsd - expensesUsd,
+	}
+	_, err = s.closureRepo.Create(cl)
+	if err != nil {
+		return nil, fmt.Errorf("save daily closure: %w", err)
+	}
+
+	return &ClosureResult{
+		Month:            date,
+		TotalIncomeBs:     incomeBs,
+		TotalExpensesBs:   expensesBs,
+		BalanceBs:         incomeBs - expensesBs,
+		TotalIncomeUsd:    incomeUsd,
+		TotalExpensesUsd:  expensesUsd,
+		BalanceUsd:        incomeUsd - expensesUsd,
+		TotalIncomeUsdt:   incomeUsdt,
+		TotalExpensesUsdt: expensesUsdt,
+		BalanceUsdt:       incomeUsdt - expensesUsdt,
+		ClosedAt:          cl.ClosedAt,
+	}, nil
+}
+
+func (s *ClosureService) IsDayClosed(date string) (bool, error) {
+	_, err := s.closureRepo.GetByPeriod(date, core.DailyClosure)
+	if err != nil {
+		return false, nil
+	}
+	return true, nil
+}
+
 func (s *ClosureService) IsMonthClosed(year, month string) (bool, error) {
 	period := fmt.Sprintf("%s-%s", year, month)
 	_, err := s.closureRepo.GetByPeriod(period, core.MonthlyClosure)

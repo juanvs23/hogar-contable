@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { Plus, Pencil, Trash2, X, Check, PiggyBank, RefreshCw } from "lucide-react"
+import { Plus, Pencil, Trash2, X, Check, PiggyBank, RefreshCw, FileDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -9,6 +9,7 @@ import {
   DeleteSaving,
   GetSavingTotal,
   GetCurrentExchangeRates,
+  ExportSavingsToExcel,
 } from "../../../wailsjs/go/main/App"
 
 interface SavingItem {
@@ -166,10 +167,16 @@ export default function SavingsPage() {
             Registrá y administrá tus ahorros (no afecta ingresos/gastos)
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4 mr-1.5" />
-          Nuevo ahorro
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => ExportSavingsToExcel().catch(console.error)}>
+            <FileDown className="size-4 mr-1.5" />
+            Exportar
+          </Button>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4 mr-1.5" />
+            Nuevo ahorro
+          </Button>
+        </div>
       </div>
 
       {/* Global total */}

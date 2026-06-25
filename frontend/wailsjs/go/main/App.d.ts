@@ -4,6 +4,10 @@ import {service} from '../models';
 import {main} from '../models';
 import {core} from '../models';
 
+export function BackupDatabase():Promise<string>;
+
+export function CloseDay(arg1:string):Promise<service.ClosureResult>;
+
 export function CloseMonth(arg1:string,arg2:string):Promise<service.ClosureResult>;
 
 export function ConvertBsToUsd(arg1:number,arg2:number):Promise<number>;
@@ -22,6 +26,12 @@ export function DeleteSaving(arg1:number):Promise<void>;
 
 export function DeleteTransaction(arg1:number):Promise<void>;
 
+export function ExportReportToExcel(arg1:string,arg2:string):Promise<string>;
+
+export function ExportSavingsToExcel():Promise<string>;
+
+export function ExportTransactionsToExcel(arg1:string,arg2:string,arg3:string):Promise<string>;
+
 export function GetCurrentExchangeRates():Promise<main.ExchangeRateResult>;
 
 export function GetExpensesByCategory(arg1:string,arg2:string):Promise<Array<core.CategoryTotal>>;
@@ -39,6 +49,10 @@ export function GetTransaction(arg1:number):Promise<core.Transaction>;
 export function GetYearlySummary(arg1:string):Promise<service.MonthlySummary>;
 
 export function Greet(arg1:string):Promise<string>;
+
+export function ImportTransactionsFromCSV():Promise<service.ImportResult>;
+
+export function IsDayClosed(arg1:string):Promise<boolean>;
 
 export function IsMonthClosed(arg1:string,arg2:string):Promise<boolean>;
 
