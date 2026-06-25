@@ -20,10 +20,10 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:     "Hogar Contable",
-		Width:     1200,
-		Height:    800,
-		MinWidth:  900,
-		MinHeight: 600,
+		Width:     1000,
+		Height:    700,
+		MinWidth:  800,
+		MinHeight: 500,
 		Frameless: false,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
