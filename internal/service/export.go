@@ -30,14 +30,14 @@ func (s *ExportService) ExportTransactions(filePath, dateFrom, dateTo, txType st
 	return writeTransactionsExcel(filePath, transactions)
 }
 
-func (s *ExportService) ExportSavings(filePath string, savings []core.Saving) error {
+func (s *ExportService) ExportSavings(filePath string, balances []core.AccountBalance) error {
 	f := excelize.NewFile()
 	defer f.Close()
 
 	sheet := "Ahorros"
 	f.SetSheetName("Sheet1", sheet)
 
-	headers := []any{"Fecha", "Descripción", "Monto USD", "Monto Bs"}
+	headers := []any{"Cuenta", "Balance USD", "Balance Bs"}
 	headerStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{Bold: true, Size: 11},
 		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"#E3F2FD"}},
@@ -49,25 +49,24 @@ func (s *ExportService) ExportSavings(filePath string, savings []core.Saving) er
 	lastCol := string(rune('A' + len(headers) - 1))
 	f.SetCellStyle(sheet, "A1", fmt.Sprintf("%s1", lastCol), headerStyle)
 
-	for i, sv := range savings {
+	for i, b := range balances {
 		row := i + 2
-		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), sv.CreatedAt)
-		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), sv.Description)
-		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), sv.AmountUsd)
-		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), sv.AmountBs)
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), b.Account.Name)
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), b.BalanceUsd)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), b.BalanceBs)
 	}
 
-	for col, w := range map[string]float64{"A": 18, "B": 30, "C": 14, "D": 14} {
+	for col, w := range map[string]float64{"A": 30, "B": 14, "C": 14} {
 		f.SetColWidth(sheet, col, col, w)
 	}
 
 	numFmt := "#,##0.00"
 	moneyStyle, _ := f.NewStyle(&excelize.Style{CustomNumFmt: &numFmt})
-	if len(savings) > 0 {
-		f.SetCellStyle(sheet, "C2", fmt.Sprintf("D%d", len(savings)+1), moneyStyle)
+	if len(balances) > 0 {
+		f.SetCellStyle(sheet, "B2", fmt.Sprintf("C%d", len(balances)+1), moneyStyle)
 	}
 
-	rangeExpr := fmt.Sprintf("A1:%s%d", lastCol, len(savings)+1)
+	rangeExpr := fmt.Sprintf("A1:%s%d", lastCol, len(balances)+1)
 	f.AutoFilter(sheet, rangeExpr, []excelize.AutoFilterOptions{})
 
 	return f.SaveAs(filePath)

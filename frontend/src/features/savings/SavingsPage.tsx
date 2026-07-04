@@ -1,336 +1,296 @@
-import { useState, useEffect, useCallback } from "react"
-import { Plus, Pencil, Trash2, X, Check, PiggyBank, RefreshCw, FileDown } from "lucide-react"
-import WysiwygEditor from "@/components/WysiwygEditor"
+import { useState, useEffect } from "react"
+import { Plus, PiggyBank, TrendingUp, TrendingDown, Eye, EyeOff, FileDown, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
-  ListSavings,
-  CreateSaving,
-  UpdateSaving,
-  DeleteSaving,
-  GetSavingTotal,
-  GetCurrentExchangeRates,
+  CreateSavingAccount,
+  ListSavingAccounts,
+  UpdateSavingAccount,
+  DeleteSavingAccount,
+  DepositToAccount,
+  WithdrawFromAccount,
+  ListAccountMovements,
   ExportSavingsToExcel,
+  GetCurrentExchangeRates,
+  ListCategories,
 } from "../../../wailsjs/go/main/App"
+import { core } from "../../../wailsjs/go/models"
+import WysiwygEditor from "@/components/WysiwygEditor"
 
-interface SavingItem {
-  id: number
-  description: string
-  amount_bs: number
-  amount_usd: number
-  created_at: string
-}
+type AccountBalance = core.AccountBalance
+type Movement = core.SavingMovement
 
-interface SavingTotal {
-  total_bs: number
-  total_usd: number
-}
-
-interface ExchangeRates {
-  official: number
-  p2p: number
-}
-
-function formatUsd(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-  }).format(value)
-}
-
-function formatBs(value: number): string {
-  return new Intl.NumberFormat("es-VE", {
-    style: "currency",
-    currency: "VES",
-    minimumFractionDigits: 2,
-  }).format(value)
-}
+function formatUsd(v: number) { return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(v) }
+function formatBs(v: number) { return new Intl.NumberFormat("es-VE", { style: "currency", currency: "VES", minimumFractionDigits: 2 }).format(v) }
 
 export default function SavingsPage() {
-  const [savings, setSavings] = useState<SavingItem[]>([])
-  const [total, setTotal] = useState<SavingTotal | null>(null)
+  const [accounts, setAccounts] = useState<AccountBalance[]>([])
   const [loading, setLoading] = useState(true)
-  const [rates, setRates] = useState<ExchangeRates | null>(null)
-  const [ratesLoading, setRatesLoading] = useState(false)
+  const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [movements, setMovements] = useState<Movement[]>([])
+  const [rates, setRates] = useState<{ official: number; p2p: number } | null>(null)
+  const [incomeCategories, setIncomeCategories] = useState<{ id: number; name: string }[]>([])
 
-  // Create form
-  const [createOpen, setCreateOpen] = useState(false)
+  // Create account
+  const [showCreate, setShowCreate] = useState(false)
+  const [newName, setNewName] = useState("")
   const [newDesc, setNewDesc] = useState("")
-  const [newUsd, setNewUsd] = useState("")
   const [creating, setCreating] = useState(false)
 
-  // Edit state
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editDesc, setEditDesc] = useState("")
-  const [editUsd, setEditUsd] = useState("")
-  const [saving, setSaving] = useState(false)
+  // Deposit/Withdraw dialog
+  const [movAccId, setMovAccId] = useState<number | null>(null)
+  const [movType, setMovType] = useState<"deposit" | "withdraw">("deposit")
+  const [movUsd, setMovUsd] = useState("")
+  const [movDesc, setMovDesc] = useState("")
+  const [movAsIncome, setMovAsIncome] = useState(false)
+  const [movIncomeCat, setMovIncomeCat] = useState<number | null>(null)
+  const [processingMov, setProcessingMov] = useState(false)
 
-  const fetchRates = useCallback(async () => {
-    setRatesLoading(true)
-    try {
-      const r = await GetCurrentExchangeRates()
-      setRates(r)
-    } catch {
-      // fallback silent
-    } finally {
-      setRatesLoading(false)
-    }
-  }, [])
+  // Edit account
+  const [editId, setEditId] = useState<number | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editDesc, setEditDesc] = useState("")
 
   const fetchAll = async () => {
     setLoading(true)
     try {
-      const [savingsList, totalRes] = await Promise.all([
-        ListSavings(),
-        GetSavingTotal(),
+      const [accs, r, cats] = await Promise.all([
+        ListSavingAccounts(),
+        GetCurrentExchangeRates().catch(() => null),
+        ListCategories("income"),
       ])
-      setSavings(savingsList ?? [])
-      setTotal(totalRes)
-    } catch (err) {
-      console.error("Failed to load savings:", err)
-    } finally {
-      setLoading(false)
-    }
+      setAccounts(accs ?? [])
+      setRates(r)
+      setIncomeCategories(cats ?? [])
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchAll(); fetchRates() }, [])
+  useEffect(() => { fetchAll() }, [])
 
-  // Auto-calculated Bs values
-  const parsedUsd = parseFloat(newUsd) || 0
-  const rateOfficial = rates?.official ?? 0
-  const rateP2P = rates?.p2p ?? 0
-  const bsBcv = parsedUsd * rateOfficial
-  const bsUsdt = parsedUsd * rateP2P
+  const loadMovements = async (accId: number) => {
+    if (expandedId === accId) { setExpandedId(null); return }
+    setExpandedId(accId)
+    try {
+      const movs = await ListAccountMovements(accId)
+      setMovements(movs ?? [])
+    } catch (err) { console.error(err) }
+  }
 
   const handleCreate = async () => {
-    if (!newDesc.trim() || parsedUsd <= 0) return
+    if (!newName.trim()) return
     setCreating(true)
     try {
-      await CreateSaving(newDesc.trim(), bsBcv, parsedUsd)
-      setNewDesc(""); setNewUsd("")
-      setCreateOpen(false)
+      await CreateSavingAccount(newName.trim(), newDesc)
+      setNewName(""); setNewDesc(""); setShowCreate(false)
       await fetchAll()
-    } catch (err) {
-      console.error("Failed to create saving:", err)
-    } finally {
-      setCreating(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setCreating(false) }
   }
 
-  const startEdit = (s: SavingItem) => {
-    setEditingId(s.id)
-    setEditDesc(s.description)
-    setEditUsd(String(s.amount_usd))
-  }
-
-  const cancelEdit = () => setEditingId(null)
-
-  const parsedEditUsd = parseFloat(editUsd) || 0
-  const editBsBcv = parsedEditUsd * rateOfficial
-
-  const handleUpdate = async (id: number) => {
-    if (!editDesc.trim() || parsedEditUsd <= 0) return
-    setSaving(true)
+  const handleMovement = async () => {
+    if (!movAccId || !parseFloat(movUsd)) return
+    setProcessingMov(true)
     try {
-      await UpdateSaving(id, editDesc.trim(), editBsBcv, parsedEditUsd)
-      setEditingId(null)
+      const usd = parseFloat(movUsd)
+      const bs = rates?.official ? usd * rates.official : 0
+      if (movType === "deposit") {
+        await DepositToAccount(movAccId, usd, bs, movDesc)
+      } else {
+        await WithdrawFromAccount(movAccId, usd, bs, movDesc, movAsIncome, movAsIncome ? movIncomeCat : null)
+      }
+      setMovUsd(""); setMovDesc(""); setMovAccId(null); setMovAsIncome(false)
       await fetchAll()
-    } catch (err) {
-      console.error("Failed to update saving:", err)
-    } finally {
-      setSaving(false)
-    }
+      if (expandedId) loadMovements(expandedId)
+    } catch (err) { console.error(err) }
+    finally { setProcessingMov(false) }
   }
 
-  const handleDelete = async (id: number, desc: string) => {
-      const plainDesc = desc.replace(/<[^>]*>/g, '')
-      if (!window.confirm(`¿Eliminar el ahorro "${plainDesc}"?`)) return
-    try {
-      await DeleteSaving(id)
-      await fetchAll()
-    } catch (err) {
-      console.error("Failed to delete saving:", err)
-    }
+  const handleDelete = async (id: number, name: string) => {
+    if (!window.confirm(`¿Eliminar la cuenta "${name}" y todos sus movimientos?`)) return
+    try { await DeleteSavingAccount(id); await fetchAll() }
+    catch (err) { console.error(err) }
   }
 
-  const hasRates = rateOfficial > 0 && rateP2P > 0
+  const totalUsd = accounts.reduce((s, a) => s + a.balance_usd, 0)
+  const totalBs = accounts.reduce((s, a) => s + a.balance_bs, 0)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <PiggyBank className="size-6 text-primary" />
-            Ahorros
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Registrá y administrá tus ahorros (no afecta ingresos/gastos)
-          </p>
+          <h2 className="text-xl font-bold flex items-center gap-2"><PiggyBank className="size-5 text-primary" /> Ahorros</h2>
+          <p className="text-xs text-muted-foreground">Cuentas, depósitos y retiros</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => ExportSavingsToExcel().catch(console.error)}>
-            <FileDown className="size-4 mr-1.5" />
-            Exportar
-          </Button>
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="size-4 mr-1.5" />
-            Nuevo ahorro
-          </Button>
+          <Button variant="outline" size="xs" onClick={() => ExportSavingsToExcel().catch(console.error)}><FileDown className="size-3.5 mr-1" />Exportar</Button>
+          <Button size="xs" onClick={() => setShowCreate(true)}><Plus className="size-3.5 mr-1" />Nueva cuenta</Button>
         </div>
       </div>
 
-      {/* Global total */}
-      {total && (
-        <div className="rounded-lg border border-border bg-card p-5">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total ahorrado</p>
-          <div className="flex items-baseline gap-4 flex-wrap">
-            <span className="text-2xl font-bold text-chart-1">{formatUsd(total.total_usd)}</span>
-            <span className="text-sm text-muted-foreground">
-              ≈ {formatBs(total.total_bs)} (BCV)
-            </span>
+      {/* Total global */}
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total ahorrado</p>
+        <p className="text-2xl font-bold text-chart-1">{formatUsd(totalUsd)}</p>
+        <p className="text-xs text-muted-foreground">{formatBs(totalBs)}</p>
+      </div>
+
+      {/* Create account form */}
+      {showCreate && (
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <h3 className="text-sm font-semibold">Nueva cuenta de ahorro</h3>
+          <div className="flex flex-wrap gap-3">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Nombre</label>
+              <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ej: Banco A" className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Descripción</label>
+              <input type="text" value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Opcional" className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
+            </div>
+            <div className="flex items-end gap-2">
+              <Button size="sm" onClick={handleCreate} disabled={creating || !newName.trim()}>{creating ? "Creando..." : "Crear"}</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowCreate(false)}>Cancelar</Button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Create form */}
-      {createOpen && (
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="text-sm font-semibold mb-3">Nuevo ahorro</h3>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[250px]">
-              <label className="text-xs font-medium mb-1 block text-muted-foreground">Descripción</label>
-              <WysiwygEditor
-                value={newDesc}
-                onChange={setNewDesc}
-                placeholder="Ej: Fondo de emergencia"
-              />
-            </div>
-            <div className="w-32">
-              <label className="text-xs font-medium mb-1 block text-muted-foreground">Monto en USD</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={newUsd}
-                onChange={(e) => setNewUsd(e.target.value)}
-                placeholder="0.00"
-                className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
-              />
-            </div>
-            <Button onClick={handleCreate} disabled={creating || !newDesc.trim() || parsedUsd <= 0} size="sm">
-              {creating ? "Guardando..." : "Guardar"}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-          </div>
-
-          {/* Auto-converted amounts */}
-          {parsedUsd > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-muted-foreground">
-              <span>USD: <strong className="text-foreground">{formatUsd(parsedUsd)}</strong></span>
-              {hasRates && (
-                <>
-                  <span>→ Bs BCV: <strong className="text-foreground">{formatBs(bsBcv)}</strong></span>
-                  <span>→ Bs USDT: <strong className="text-foreground">{formatBs(bsUsdt)}</strong></span>
-                </>
-              )}
-              {!hasRates && !ratesLoading && (
-                <span className="text-destructive">Tasas no disponibles</span>
-              )}
-              {ratesLoading && <span>Cargando tasas...</span>}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* List */}
+      {/* Accounts list */}
       {loading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />
-          ))}
-        </div>
-      ) : savings.length === 0 ? (
+        <div className="space-y-2">{[1,2].map(i => <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />)}</div>
+      ) : accounts.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <PiggyBank className="size-8 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No hay ahorros registrados</p>
+          <PiggyBank className="size-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">No hay cuentas. Creá una para empezar.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {savings.map((s) => {
-            const listBsBcv = s.amount_usd * rateOfficial
-            const listBsUsdt = s.amount_usd * rateP2P
+          {accounts.map(ab => {
+            const isExpanded = expandedId === ab.account.id
+            const accMovs = isExpanded ? movements : []
             return (
-              <div
-                key={s.id}
-                className="rounded-lg border border-border bg-card px-4 py-3 flex items-center justify-between group"
-              >
-                {editingId === s.id ? (
-                  /* Edit mode */
-                  <div className="flex items-start gap-3 w-full">
-                    <div className="flex-1">
-                      <WysiwygEditor
-                        value={editDesc}
-                        onChange={setEditDesc}
-                        placeholder="Descripción"
-                        minHeight={60}
-                      />
+              <div key={ab.account.id} className="rounded-lg border border-border bg-card">
+                {/* Account header */}
+                <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => loadMovements(ab.account.id)}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <PiggyBank className="size-5 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">{ab.account.name}</p>
+                      {ab.account.description && <p className="text-xs text-muted-foreground truncate">{ab.account.description}</p>}
                     </div>
-                    <div className="w-28">
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={editUsd}
-                        onChange={(e) => setEditUsd(e.target.value)}
-                        className="h-7 w-full rounded-md border border-input bg-background px-2 text-sm text-right focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
-                      />
-                      {hasRates && parsedEditUsd > 0 && (
-                        <p className="text-[10px] text-muted-foreground text-right mt-0.5">
-                          Bs {editBsBcv.toFixed(2)} / Bs {(parsedEditUsd * rateP2P).toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-                    <Button variant="ghost" size="icon-xs" onClick={() => handleUpdate(s.id)} disabled={saving || !editDesc.trim() || parsedEditUsd <= 0} className="text-primary">
-                      <Check className="size-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon-xs" onClick={cancelEdit}>
-                      <X className="size-3.5" />
-                    </Button>
                   </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <PiggyBank className="size-4 text-muted-foreground shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate" dangerouslySetInnerHTML={{ __html: s.description }} />
-                        <p className="text-xs text-muted-foreground">{s.created_at}</p>
-                      </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right">
+                      <p className="text-sm font-bold tabular-nums">{formatUsd(ab.balance_usd)}</p>
+                      <p className="text-xs text-muted-foreground tabular-nums">{formatBs(ab.balance_bs)}</p>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <div className="text-right">
-                        <p className="text-sm font-semibold tabular-nums">{formatUsd(s.amount_usd)}</p>
-                        {hasRates && (
-                          <p className="text-xs text-muted-foreground tabular-nums">
-                            Bs {listBsBcv.toFixed(2)} / Bs {listBsUsdt.toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon-xs" onClick={() => startEdit(s)}>
-                          <Pencil className="size-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(s.id, s.description)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </div>
+                    {isExpanded ? <EyeOff className="size-4 text-muted-foreground" /> : <Eye className="size-4 text-muted-foreground" />}
+                  </div>
+                </div>
+
+                {/* Expanded: movements + actions */}
+                {isExpanded && (
+                  <div className="border-t border-border px-4 py-3 space-y-3">
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2">
+                      <Button size="xs" variant="default" onClick={(e) => { e.stopPropagation(); setMovAccId(ab.account.id); setMovType("deposit") }}>
+                        <TrendingUp className="size-3 mr-1" /> Depositar
+                      </Button>
+                      <Button size="xs" variant="destructive" onClick={(e) => { e.stopPropagation(); setMovAccId(ab.account.id); setMovType("withdraw") }}>
+                        <TrendingDown className="size-3 mr-1" /> Retirar
+                      </Button>
+                      <Button size="xs" variant="ghost" onClick={async (e) => { e.stopPropagation(); setEditId(ab.account.id); setEditName(ab.account.name); setEditDesc(ab.account.description ?? "") }}>
+                        <Pencil className="size-3 mr-1" /> Editar
+                      </Button>
+                      <Button size="xs" variant="ghost" className="text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(ab.account.id, ab.account.name) }}>
+                        <Trash2 className="size-3" />
+                      </Button>
                     </div>
-                  </>
+
+                    {/* Edit form inline */}
+                    {editId === ab.account.id && (
+                      <div className="flex gap-2 items-start" onClick={e => e.stopPropagation()}>
+                        <div className="flex-1 space-y-1">
+                          <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="h-7 w-full rounded border border-input bg-background px-2 text-sm" />
+                          <input type="text" value={editDesc} onChange={e => setEditDesc(e.target.value)} className="h-7 w-full rounded border border-input bg-background px-2 text-sm" />
+                        </div>
+                        <Button size="xs" onClick={async () => { await UpdateSavingAccount(ab.account.id, editName, editDesc); setEditId(null); await fetchAll() }}>Guardar</Button>
+                        <Button size="xs" variant="ghost" onClick={() => setEditId(null)}>X</Button>
+                      </div>
+                    )}
+
+                    {/* Movements list */}
+                    {accMovs.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-2">Sin movimientos</p>
+                    ) : (
+                      <div className="space-y-1 max-h-60 overflow-y-auto">
+                        {accMovs.map(m => (
+                          <div key={m.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={cn("inline-block w-1.5 h-1.5 rounded-full shrink-0", m.type === "deposit" ? "bg-chart-2" : "bg-destructive")} />
+                              <span className="truncate">{m.description || (m.type === "deposit" ? "Depósito" : "Retiro")}</span>
+                              {m.created_transaction_id && <span className="text-[10px] text-chart-2 font-medium">→ Ingreso</span>}
+                            </div>
+                            <span className={cn("tabular-nums font-medium whitespace-nowrap ml-2", m.type === "deposit" ? "text-chart-2" : "text-destructive")}>
+                              {m.type === "deposit" ? "+" : "-"}{formatUsd(m.amount_usd)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Deposit/Withdraw dialog */}
+      {movAccId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/80" onClick={() => setMovAccId(null)}>
+          <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+            <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+              <h3 className="text-sm font-semibold">{movType === "deposit" ? "Depositar" : "Retirar"}</h3>
+              <Button variant="ghost" size="icon-xs" onClick={() => setMovAccId(null)}><Trash2 className="size-3.5" /></Button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Monto USD</label>
+                <input type="number" step="0.01" min="0" value={movUsd} onChange={e => setMovUsd(e.target.value)} placeholder="0.00" className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Descripción</label>
+                <WysiwygEditor value={movDesc} onChange={setMovDesc} placeholder="Opcional" minHeight={50} />
+              </div>
+
+              {movType === "withdraw" && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={movAsIncome} onChange={e => setMovAsIncome(e.target.checked)} className="rounded border-border" />
+                  <span className="text-xs text-muted-foreground">Agregar como ingreso en Transacciones</span>
+                </label>
+              )}
+
+              {movAsIncome && (
+                <div>
+                  <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Categoría del ingreso</label>
+                  <select value={movIncomeCat ?? ""} onChange={e => setMovIncomeCat(e.target.value ? Number(e.target.value) : null)} className="h-8 w-full rounded-md border border-input bg-background text-foreground px-2 text-sm">
+                    <option value="" className="bg-background text-foreground">Sin categoría</option>
+                    {incomeCategories.map(c => <option key={c.id} value={c.id} className="bg-background text-foreground">{c.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-1">
+                <Button variant="outline" size="xs" onClick={() => setMovAccId(null)}>Cancelar</Button>
+                <Button size="xs" variant={movType === "deposit" ? "default" : "destructive"} onClick={handleMovement} disabled={processingMov || !parseFloat(movUsd)}>
+                  {processingMov ? "Procesando..." : movType === "deposit" ? "Depositar" : "Retirar"}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

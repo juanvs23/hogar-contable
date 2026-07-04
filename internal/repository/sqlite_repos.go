@@ -375,71 +375,124 @@ func scanNullableString(ns sql.NullString) *string {
 	return nil
 }
 
-// ---- Savings ----
+// ---- Saving Accounts ----
 
-type SQLiteSavingRepo struct {
+type SQLiteSavingAccountRepo struct {
 	db *sql.DB
 }
 
-func NewSavingRepo(db *sql.DB) SavingRepository {
-	return &SQLiteSavingRepo{db: db}
+func NewSavingAccountRepo(db *sql.DB) SavingAccountRepository {
+	return &SQLiteSavingAccountRepo{db: db}
 }
 
-func (r *SQLiteSavingRepo) Create(s *core.Saving) (int64, error) {
-	result, err := r.db.Exec(
-		`INSERT INTO savings (description, amount_bs, amount_usd) VALUES (?, ?, ?)`,
-		s.Description, s.AmountBs, s.AmountUsd,
-	)
+func (r *SQLiteSavingAccountRepo) Create(acc *core.SavingAccount) (int64, error) {
+	res, err := r.db.Exec(`INSERT INTO saving_accounts (name, description) VALUES (?, ?)`, acc.Name, acc.Description)
 	if err != nil {
-		return 0, fmt.Errorf("create saving: %w", err)
+		return 0, fmt.Errorf("create account: %w", err)
 	}
-	return result.LastInsertId()
+	return res.LastInsertId()
 }
 
-func (r *SQLiteSavingRepo) List() ([]core.Saving, error) {
-	rows, err := r.db.Query(`SELECT id, description, amount_bs, amount_usd, created_at FROM savings ORDER BY created_at DESC`)
+func (r *SQLiteSavingAccountRepo) List() ([]core.SavingAccount, error) {
+	rows, err := r.db.Query(`SELECT id, name, description, created_at FROM saving_accounts ORDER BY name`)
 	if err != nil {
-		return nil, fmt.Errorf("list savings: %w", err)
+		return nil, fmt.Errorf("list accounts: %w", err)
 	}
 	defer rows.Close()
-
-	savings := make([]core.Saving, 0)
+	accs := make([]core.SavingAccount, 0)
 	for rows.Next() {
-		var s core.Saving
-		if err := rows.Scan(&s.ID, &s.Description, &s.AmountBs, &s.AmountUsd, &s.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan saving: %w", err)
+		var a core.SavingAccount
+		if err := rows.Scan(&a.ID, &a.Name, &a.Description, &a.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan account: %w", err)
 		}
-		savings = append(savings, s)
+		accs = append(accs, a)
 	}
-	return savings, nil
+	return accs, nil
 }
 
-func (r *SQLiteSavingRepo) Update(s *core.Saving) error {
-	_, err := r.db.Exec(
-		`UPDATE savings SET description=?, amount_bs=?, amount_usd=? WHERE id=?`,
-		s.Description, s.AmountBs, s.AmountUsd, s.ID,
-	)
-	if err != nil {
-		return fmt.Errorf("update saving %d: %w", s.ID, err)
-	}
-	return nil
+func (r *SQLiteSavingAccountRepo) Update(acc *core.SavingAccount) error {
+	_, err := r.db.Exec(`UPDATE saving_accounts SET name=?, description=? WHERE id=?`, acc.Name, acc.Description, acc.ID)
+	return err
 }
 
-func (r *SQLiteSavingRepo) Delete(id int64) error {
-	_, err := r.db.Exec(`DELETE FROM savings WHERE id=?`, id)
-	if err != nil {
-		return fmt.Errorf("delete saving %d: %w", id, err)
-	}
-	return nil
+func (r *SQLiteSavingAccountRepo) Delete(id int64) error {
+	_, err := r.db.Exec(`DELETE FROM saving_accounts WHERE id=?`, id)
+	return err
 }
 
-func (r *SQLiteSavingRepo) GetTotal() (totalBs, totalUsd float64, err error) {
-	row := r.db.QueryRow(`SELECT COALESCE(SUM(amount_bs), 0), COALESCE(SUM(amount_usd), 0) FROM savings`)
-	err = row.Scan(&totalBs, &totalUsd)
+func (r *SQLiteSavingAccountRepo) GetBalance(accountID int64) (usd, bs float64, err error) {
+	row := r.db.QueryRow(`
+		SELECT
+			COALESCE(SUM(CASE WHEN type='deposit' THEN amount_usd ELSE -amount_usd END), 0),
+			COALESCE(SUM(CASE WHEN type='deposit' THEN amount_bs ELSE -amount_bs END), 0)
+		FROM saving_movements WHERE account_id=?`, accountID)
+	err = row.Scan(&usd, &bs)
+	return
+}
+
+func (r *SQLiteSavingAccountRepo) GetAllBalances() ([]core.AccountBalance, error) {
+	rows, err := r.db.Query(`
+		SELECT a.id, a.name, a.description, a.created_at,
+			COALESCE(SUM(CASE WHEN m.type='deposit' THEN m.amount_usd ELSE -m.amount_usd END), 0),
+			COALESCE(SUM(CASE WHEN m.type='deposit' THEN m.amount_bs ELSE -m.amount_bs END), 0)
+		FROM saving_accounts a
+		LEFT JOIN saving_movements m ON m.account_id = a.id
+		GROUP BY a.id ORDER BY a.name`)
 	if err != nil {
-		return 0, 0, fmt.Errorf("get saving total: %w", err)
+		return nil, fmt.Errorf("get all balances: %w", err)
 	}
-	return totalBs, totalUsd, nil
+	defer rows.Close()
+	balances := make([]core.AccountBalance, 0)
+	for rows.Next() {
+		var ab core.AccountBalance
+		if err := rows.Scan(&ab.Account.ID, &ab.Account.Name, &ab.Account.Description, &ab.Account.CreatedAt, &ab.BalanceUsd, &ab.BalanceBs); err != nil {
+			return nil, fmt.Errorf("scan balance: %w", err)
+		}
+		balances = append(balances, ab)
+	}
+	return balances, nil
+}
+
+// ---- Saving Movements ----
+
+type SQLiteSavingMovementRepo struct {
+	db *sql.DB
+}
+
+func NewSavingMovementRepo(db *sql.DB) SavingMovementRepository {
+	return &SQLiteSavingMovementRepo{db: db}
+}
+
+func (r *SQLiteSavingMovementRepo) Create(m *core.SavingMovement) (int64, error) {
+	res, err := r.db.Exec(
+		`INSERT INTO saving_movements (account_id, type, amount_usd, amount_bs, description, created_transaction_id) VALUES (?, ?, ?, ?, ?, ?)`,
+		m.AccountID, m.Type, m.AmountUsd, m.AmountBs, m.Description, m.CreatedTransactionID)
+	if err != nil {
+		return 0, fmt.Errorf("create movement: %w", err)
+	}
+	return res.LastInsertId()
+}
+
+func (r *SQLiteSavingMovementRepo) ListByAccount(accountID int64) ([]core.SavingMovement, error) {
+	rows, err := r.db.Query(`SELECT id, account_id, type, amount_usd, amount_bs, description, created_transaction_id, created_at FROM saving_movements WHERE account_id=? ORDER BY created_at DESC`, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("list movements: %w", err)
+	}
+	defer rows.Close()
+	movs := make([]core.SavingMovement, 0)
+	for rows.Next() {
+		var m core.SavingMovement
+		if err := rows.Scan(&m.ID, &m.AccountID, &m.Type, &m.AmountUsd, &m.AmountBs, &m.Description, &m.CreatedTransactionID, &m.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan movement: %w", err)
+		}
+		movs = append(movs, m)
+	}
+	return movs, nil
+}
+
+func (r *SQLiteSavingMovementRepo) Delete(id int64) error {
+	_, err := r.db.Exec(`DELETE FROM saving_movements WHERE id=?`, id)
+	return err
 }
 
 // Ensure strings import is used

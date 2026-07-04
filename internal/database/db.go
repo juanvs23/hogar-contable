@@ -96,6 +96,26 @@ func (db *DB) migrate() error {
 			created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 		)`,
 
+		// Savings accounts
+		`CREATE TABLE IF NOT EXISTS saving_accounts (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			description TEXT NOT NULL DEFAULT '',
+			created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+		)`,
+		`CREATE TABLE IF NOT EXISTS saving_movements (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			account_id INTEGER NOT NULL,
+			type TEXT NOT NULL CHECK(type IN ('deposit','withdraw')),
+			amount_usd REAL NOT NULL DEFAULT 0,
+			amount_bs REAL NOT NULL DEFAULT 0,
+			description TEXT NOT NULL DEFAULT '',
+			created_transaction_id INTEGER,
+			created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+			FOREIGN KEY (account_id) REFERENCES saving_accounts(id),
+			FOREIGN KEY (created_transaction_id) REFERENCES transactions(id)
+		)`,
+
 		// Migrate existing tables: add new columns safely
 		`ALTER TABLE transactions ADD COLUMN amount_usd_bcv REAL NOT NULL DEFAULT 0`,
 		`ALTER TABLE transactions ADD COLUMN amount_usdt REAL NOT NULL DEFAULT 0`,

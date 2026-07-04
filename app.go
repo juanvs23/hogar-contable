@@ -54,13 +54,14 @@ func (a *App) startup(ctx context.Context) {
 	catRepo := repository.NewCategoryRepo(db.DB)
 	rateRepo := repository.NewExchangeRateRepo(db.DB)
 	closureRepo := repository.NewClosureRepo(db.DB)
-	savingRepo := repository.NewSavingRepo(db.DB)
+	accRepo := repository.NewSavingAccountRepo(db.DB)
+	movRepo := repository.NewSavingMovementRepo(db.DB)
 
 	// Initialize services
 	a.transactionSvc = service.NewTransactionService(txRepo, catRepo)
 	a.exchangeSvc = service.NewExchangeService(rateRepo, exchange.NewClient(""))
 	a.closureSvc = service.NewClosureService(txRepo, closureRepo)
-	a.savingSvc = service.NewSavingService(savingRepo)
+	a.savingSvc = service.NewSavingService(accRepo, movRepo, a.transactionSvc)
 	a.exportSvc = service.NewExportService(txRepo)
 
 	log.Println("hogar-contable started successfully")
@@ -190,24 +191,39 @@ func (a *App) IsDayClosed(date string) (bool, error) {
 
 // --- Savings ---
 
-func (a *App) CreateSaving(description string, amountBs, amountUsd float64) (int64, error) {
-	return a.savingSvc.Create(&core.Saving{Description: description, AmountBs: amountBs, AmountUsd: amountUsd})
+// Accounts
+func (a *App) CreateSavingAccount(name, description string) (int64, error) {
+	return a.savingSvc.CreateAccount(name, description)
 }
 
-func (a *App) ListSavings() ([]core.Saving, error) {
-	return a.savingSvc.List()
+func (a *App) ListSavingAccounts() ([]core.AccountBalance, error) {
+	return a.savingSvc.ListAccounts()
 }
 
-func (a *App) UpdateSaving(id int64, description string, amountBs, amountUsd float64) error {
-	return a.savingSvc.Update(&core.Saving{ID: id, Description: description, AmountBs: amountBs, AmountUsd: amountUsd})
+func (a *App) UpdateSavingAccount(id int64, name, description string) error {
+	return a.savingSvc.UpdateAccount(id, name, description)
 }
 
-func (a *App) DeleteSaving(id int64) error {
-	return a.savingSvc.Delete(id)
+func (a *App) DeleteSavingAccount(id int64) error {
+	return a.savingSvc.DeleteAccount(id)
 }
 
-func (a *App) GetSavingTotal() (*service.SavingTotal, error) {
-	return a.savingSvc.GetTotal()
+// Movements
+func (a *App) DepositToAccount(accountID int64, amountUsd, amountBs float64, description string) (int64, error) {
+	return a.savingSvc.Deposit(service.DepositInput{
+		AccountID: accountID, AmountUsd: amountUsd, AmountBs: amountBs, Description: description,
+	})
+}
+
+func (a *App) WithdrawFromAccount(accountID int64, amountUsd, amountBs float64, description string, createIncome bool, incomeCategory *int64) (int64, error) {
+	return a.savingSvc.Withdraw(service.WithdrawInput{
+		AccountID: accountID, AmountUsd: amountUsd, AmountBs: amountBs,
+		Description: description, CreateIncome: createIncome, IncomeCategory: incomeCategory,
+	})
+}
+
+func (a *App) ListAccountMovements(accountID int64) ([]core.SavingMovement, error) {
+	return a.savingSvc.ListMovements(accountID)
 }
 
 // --- Export ---
@@ -303,9 +319,9 @@ func (a *App) ExportReportToExcel(year, month string) (string, error) {
 }
 
 func (a *App) ExportSavingsToExcel() (string, error) {
-	savings, err := a.savingSvc.List()
+	balances, err := a.savingSvc.ListAccounts()
 	if err != nil {
-		return "", fmt.Errorf("list savings: %w", err)
+		return "", fmt.Errorf("list accounts: %w", err)
 	}
 
 	dir := filepath.Join(getDataDir(), "hogar-contable", "exports")
@@ -316,7 +332,7 @@ func (a *App) ExportSavingsToExcel() (string, error) {
 	fileName := fmt.Sprintf("ahorros_%s.xlsx", time.Now().Format("2006-01-02"))
 	filePath := filepath.Join(dir, fileName)
 
-	if err := a.exportSvc.ExportSavings(filePath, savings); err != nil {
+	if err := a.exportSvc.ExportSavings(filePath, balances); err != nil {
 		return "", err
 	}
 

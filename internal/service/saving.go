@@ -1,43 +1,111 @@
 package service
 
 import (
+	"fmt"
+
 	"hogar-contable/internal/core"
 	"hogar-contable/internal/repository"
 )
 
 type SavingService struct {
-	repo repository.SavingRepository
+	accRepo   repository.SavingAccountRepository
+	movRepo   repository.SavingMovementRepository
+	txService *TransactionService // to create transactions on withdraw
 }
 
-func NewSavingService(repo repository.SavingRepository) *SavingService {
-	return &SavingService{repo: repo}
+func NewSavingService(accRepo repository.SavingAccountRepository, movRepo repository.SavingMovementRepository, txService *TransactionService) *SavingService {
+	return &SavingService{accRepo: accRepo, movRepo: movRepo, txService: txService}
 }
 
-func (s *SavingService) Create(saving *core.Saving) (int64, error) {
-	return s.repo.Create(saving)
+// --- Accounts ---
+
+func (s *SavingService) CreateAccount(name, description string) (int64, error) {
+	return s.accRepo.Create(&core.SavingAccount{Name: name, Description: description})
 }
 
-func (s *SavingService) List() ([]core.Saving, error) {
-	return s.repo.List()
+func (s *SavingService) ListAccounts() ([]core.AccountBalance, error) {
+	return s.accRepo.GetAllBalances()
 }
 
-func (s *SavingService) Update(saving *core.Saving) error {
-	return s.repo.Update(saving)
+func (s *SavingService) UpdateAccount(id int64, name, description string) error {
+	return s.accRepo.Update(&core.SavingAccount{ID: id, Name: name, Description: description})
 }
 
-func (s *SavingService) Delete(id int64) error {
-	return s.repo.Delete(id)
+func (s *SavingService) DeleteAccount(id int64) error {
+	return s.accRepo.Delete(id)
 }
 
-type SavingTotal struct {
-	TotalBs  float64 `json:"total_bs"`
-	TotalUsd float64 `json:"total_usd"`
+// --- Movements ---
+
+type DepositInput struct {
+	AccountID   int64   `json:"account_id"`
+	AmountUsd   float64 `json:"amount_usd"`
+	AmountBs    float64 `json:"amount_bs"`
+	Description string  `json:"description"`
 }
 
-func (s *SavingService) GetTotal() (*SavingTotal, error) {
-	bs, usd, err := s.repo.GetTotal()
-	if err != nil {
-		return nil, err
+func (s *SavingService) Deposit(in DepositInput) (int64, error) {
+	mov := &core.SavingMovement{
+		AccountID:   in.AccountID,
+		Type:        "deposit",
+		AmountUsd:   in.AmountUsd,
+		AmountBs:    in.AmountBs,
+		Description: in.Description,
 	}
-	return &SavingTotal{TotalBs: bs, TotalUsd: usd}, nil
+	return s.movRepo.Create(mov)
+}
+
+type WithdrawInput struct {
+	AccountID      int64   `json:"account_id"`
+	AmountUsd      float64 `json:"amount_usd"`
+	AmountBs       float64 `json:"amount_bs"`
+	Description    string  `json:"description"`
+	CreateIncome   bool    `json:"create_income"`   // if true, creates a transaction
+	IncomeCategory *int64  `json:"income_category"` // category for the income tx
+}
+
+func (s *SavingService) Withdraw(in WithdrawInput) (int64, error) {
+	// Check balance
+	usd, _, err := s.accRepo.GetBalance(in.AccountID)
+	if err != nil {
+		return 0, fmt.Errorf("check balance: %w", err)
+	}
+	if usd < in.AmountUsd {
+		return 0, fmt.Errorf("saldo insuficiente: disponible $%.2f, solicitado $%.2f", usd, in.AmountUsd)
+	}
+
+	mov := &core.SavingMovement{
+		AccountID:   in.AccountID,
+		Type:        "withdraw",
+		AmountUsd:   in.AmountUsd,
+		AmountBs:    in.AmountBs,
+		Description: in.Description,
+	}
+
+	// If user wants to create income transaction
+	if in.CreateIncome {
+		tx := &core.Transaction{
+			Type:        core.Income,
+			Description: fmt.Sprintf("Retiro de ahorro: %s", in.Description),
+			AmountBs:    in.AmountBs,
+			AmountUsdBcv: in.AmountUsd,
+			Date:        "", // service will set today
+			CategoryID:  in.IncomeCategory,
+		}
+		txID, err := s.txService.Create(tx)
+		if err != nil {
+			return 0, fmt.Errorf("create income transaction: %w", err)
+		}
+		mov.CreatedTransactionID = &txID
+	}
+
+	return s.movRepo.Create(mov)
+}
+
+func (s *SavingService) ListMovements(accountID int64) ([]core.SavingMovement, error) {
+	return s.movRepo.ListByAccount(accountID)
+}
+
+func (s *SavingService) GetAccountBalance(accountID int64) (usd, bs float64, err error) {
+	return s.accRepo.GetBalance(accountID)
 }

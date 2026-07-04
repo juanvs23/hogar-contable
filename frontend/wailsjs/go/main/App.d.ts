@@ -16,15 +16,17 @@ export function ConvertUsdToBs(arg1:number,arg2:number):Promise<number>;
 
 export function CreateCategory(arg1:string,arg2:string):Promise<number>;
 
-export function CreateSaving(arg1:string,arg2:number,arg3:number):Promise<number>;
+export function CreateSavingAccount(arg1:string,arg2:string):Promise<number>;
 
 export function CreateTransaction(arg1:string,arg2:string,arg3:number,arg4:number,arg5:number,arg6:number,arg7:number,arg8:any,arg9:string):Promise<number>;
 
 export function DeleteCategory(arg1:number):Promise<void>;
 
-export function DeleteSaving(arg1:number):Promise<void>;
+export function DeleteSavingAccount(arg1:number):Promise<void>;
 
 export function DeleteTransaction(arg1:number):Promise<void>;
+
+export function DepositToAccount(arg1:number,arg2:number,arg3:number,arg4:string):Promise<number>;
 
 export function ExportReportToExcel(arg1:string,arg2:string):Promise<string>;
 
@@ -42,8 +44,6 @@ export function GetLastExchangeRates():Promise<main.ExchangeRateResult>;
 
 export function GetMonthlySummary(arg1:string,arg2:string):Promise<service.MonthlySummary>;
 
-export function GetSavingTotal():Promise<service.SavingTotal>;
-
 export function GetTransaction(arg1:number):Promise<core.Transaction>;
 
 export function GetYearlySummary(arg1:string):Promise<service.MonthlySummary>;
@@ -56,14 +56,18 @@ export function IsDayClosed(arg1:string):Promise<boolean>;
 
 export function IsMonthClosed(arg1:string,arg2:string):Promise<boolean>;
 
+export function ListAccountMovements(arg1:number):Promise<Array<core.SavingMovement>>;
+
 export function ListCategories(arg1:string):Promise<Array<core.Category>>;
 
-export function ListSavings():Promise<Array<core.Saving>>;
+export function ListSavingAccounts():Promise<Array<core.AccountBalance>>;
 
 export function ListTransactions(arg1:string,arg2:string,arg3:string):Promise<Array<core.Transaction>>;
 
 export function UpdateCategory(arg1:number,arg2:string,arg3:string):Promise<void>;
 
-export function UpdateSaving(arg1:number,arg2:string,arg3:number,arg4:number):Promise<void>;
+export function UpdateSavingAccount(arg1:number,arg2:string,arg3:string):Promise<void>;
 
 export function UpdateTransaction(arg1:number,arg2:string,arg3:string,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number,arg9:any,arg10:string):Promise<void>;
+
+export function WithdrawFromAccount(arg1:number,arg2:number,arg3:number,arg4:string,arg5:boolean,arg6:any):Promise<number>;

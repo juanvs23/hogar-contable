@@ -1,5 +1,57 @@
 export namespace core {
 	
+	export class SavingAccount {
+	    id: number;
+	    name: string;
+	    description?: string;
+	    created_at: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SavingAccount(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.description = source["description"];
+	        this.created_at = source["created_at"];
+	    }
+	}
+	export class AccountBalance {
+	    account: SavingAccount;
+	    balance_usd: number;
+	    balance_bs: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new AccountBalance(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.account = this.convertValues(source["account"], SavingAccount);
+	        this.balance_usd = source["balance_usd"];
+	        this.balance_bs = source["balance_bs"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class Category {
 	    id: number;
 	    name: string;
@@ -38,23 +90,30 @@ export namespace core {
 	        this.total_usdt = source["total_usdt"];
 	    }
 	}
-	export class Saving {
+	
+	export class SavingMovement {
 	    id: number;
-	    description: string;
-	    amount_bs: number;
+	    account_id: number;
+	    type: string;
 	    amount_usd: number;
+	    amount_bs: number;
+	    description: string;
+	    created_transaction_id?: number;
 	    created_at: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new Saving(source);
+	        return new SavingMovement(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.description = source["description"];
-	        this.amount_bs = source["amount_bs"];
+	        this.account_id = source["account_id"];
+	        this.type = source["type"];
 	        this.amount_usd = source["amount_usd"];
+	        this.amount_bs = source["amount_bs"];
+	        this.description = source["description"];
+	        this.created_transaction_id = source["created_transaction_id"];
 	        this.created_at = source["created_at"];
 	    }
 	}
@@ -188,20 +247,6 @@ export namespace service {
 	        this.total_income_usdt = source["total_income_usdt"];
 	        this.total_expenses_usdt = source["total_expenses_usdt"];
 	        this.balance_usdt = source["balance_usdt"];
-	    }
-	}
-	export class SavingTotal {
-	    total_bs: number;
-	    total_usd: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new SavingTotal(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.total_bs = source["total_bs"];
-	        this.total_usd = source["total_usd"];
 	    }
 	}
 

@@ -26,8 +26,8 @@ export function CreateCategory(arg1, arg2) {
   return window['go']['main']['App']['CreateCategory'](arg1, arg2);
 }
 
-export function CreateSaving(arg1, arg2, arg3) {
-  return window['go']['main']['App']['CreateSaving'](arg1, arg2, arg3);
+export function CreateSavingAccount(arg1, arg2) {
+  return window['go']['main']['App']['CreateSavingAccount'](arg1, arg2);
 }
 
 export function CreateTransaction(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
@@ -38,12 +38,16 @@ export function DeleteCategory(arg1) {
   return window['go']['main']['App']['DeleteCategory'](arg1);
 }
 
-export function DeleteSaving(arg1) {
-  return window['go']['main']['App']['DeleteSaving'](arg1);
+export function DeleteSavingAccount(arg1) {
+  return window['go']['main']['App']['DeleteSavingAccount'](arg1);
 }
 
 export function DeleteTransaction(arg1) {
   return window['go']['main']['App']['DeleteTransaction'](arg1);
+}
+
+export function DepositToAccount(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['DepositToAccount'](arg1, arg2, arg3, arg4);
 }
 
 export function ExportReportToExcel(arg1, arg2) {
@@ -78,10 +82,6 @@ export function GetMonthlySummary(arg1, arg2) {
   return window['go']['main']['App']['GetMonthlySummary'](arg1, arg2);
 }
 
-export function GetSavingTotal() {
-  return window['go']['main']['App']['GetSavingTotal']();
-}
-
 export function GetTransaction(arg1) {
   return window['go']['main']['App']['GetTransaction'](arg1);
 }
@@ -106,12 +106,16 @@ export function IsMonthClosed(arg1, arg2) {
   return window['go']['main']['App']['IsMonthClosed'](arg1, arg2);
 }
 
+export function ListAccountMovements(arg1) {
+  return window['go']['main']['App']['ListAccountMovements'](arg1);
+}
+
 export function ListCategories(arg1) {
   return window['go']['main']['App']['ListCategories'](arg1);
 }
 
-export function ListSavings() {
-  return window['go']['main']['App']['ListSavings']();
+export function ListSavingAccounts() {
+  return window['go']['main']['App']['ListSavingAccounts']();
 }
 
 export function ListTransactions(arg1, arg2, arg3) {
@@ -122,10 +126,14 @@ export function UpdateCategory(arg1, arg2, arg3) {
   return window['go']['main']['App']['UpdateCategory'](arg1, arg2, arg3);
 }
 
-export function UpdateSaving(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['UpdateSaving'](arg1, arg2, arg3, arg4);
+export function UpdateSavingAccount(arg1, arg2, arg3) {
+  return window['go']['main']['App']['UpdateSavingAccount'](arg1, arg2, arg3);
 }
 
 export function UpdateTransaction(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) {
   return window['go']['main']['App']['UpdateTransaction'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+}
+
+export function WithdrawFromAccount(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['WithdrawFromAccount'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
