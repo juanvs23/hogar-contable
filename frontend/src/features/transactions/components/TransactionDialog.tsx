@@ -3,6 +3,7 @@ import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import CategorySelect from "./CategorySelect"
+import WysiwygEditor from "@/components/WysiwygEditor"
 import { GetCurrentExchangeRates } from "../../../../wailsjs/go/main/App"
 
 type CurrencyType = "bs" | "usd_bcv" | "usdt"
@@ -299,13 +300,10 @@ export default function TransactionDialog({
             <label htmlFor="desc" className="text-sm font-medium mb-1.5 block">
               Descripción
             </label>
-            <textarea
-              id="desc"
+            <WysiwygEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={setDescription}
               placeholder="Ej: Sueldo de junio"
-              rows={3}
-              className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring resize-none"
             />
             {errors.description && (
               <p className="text-xs text-destructive mt-1">{errors.description}</p>

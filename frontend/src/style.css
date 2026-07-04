@@ -80,3 +80,55 @@
   }
 
 }
+
+/* Quill WYSIWYG editor styles */
+.wysiwyg-wrapper .ql-container {
+  min-height: 80px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+}
+
+.wysiwyg-wrapper .ql-toolbar {
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+  background: hsl(var(--muted));
+  border-color: hsl(var(--border));
+}
+
+.wysiwyg-wrapper .ql-container {
+  border-color: hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.wysiwyg-wrapper .ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+  font-style: normal;
+}
+
+.wysiwyg-wrapper .ql-editor {
+  min-height: 80px;
+}
+
+.dark .wysiwyg-wrapper .ql-toolbar {
+  background: hsl(var(--secondary));
+}
+
+.dark .wysiwyg-wrapper .ql-stroke {
+  stroke: hsl(var(--foreground));
+}
+
+.dark .wysiwyg-wrapper .ql-fill {
+  fill: hsl(var(--foreground));
+}
+
+.dark .wysiwyg-wrapper .ql-picker {
+  color: hsl(var(--foreground));
+}
+
+.dark .wysiwyg-wrapper .ql-picker-options {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+}

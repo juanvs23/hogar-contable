@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { Plus, Pencil, Trash2, X, Check, PiggyBank, RefreshCw, FileDown } from "lucide-react"
+import WysiwygEditor from "@/components/WysiwygEditor"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -143,7 +144,8 @@ export default function SavingsPage() {
   }
 
   const handleDelete = async (id: number, desc: string) => {
-    if (!window.confirm(`¿Eliminar el ahorro "${desc}"?`)) return
+      const plainDesc = desc.replace(/<[^>]*>/g, '')
+      if (!window.confirm(`¿Eliminar el ahorro "${plainDesc}"?`)) return
     try {
       await DeleteSaving(id)
       await fetchAll()
@@ -197,14 +199,12 @@ export default function SavingsPage() {
         <div className="rounded-lg border border-border bg-card p-4">
           <h3 className="text-sm font-semibold mb-3">Nuevo ahorro</h3>
           <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-[250px]">
               <label className="text-xs font-medium mb-1 block text-muted-foreground">Descripción</label>
-              <textarea
+              <WysiwygEditor
                 value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
+                onChange={setNewDesc}
                 placeholder="Ej: Fondo de emergencia"
-                rows={2}
-                className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring resize-none"
               />
             </div>
             <div className="w-32">
@@ -269,13 +269,14 @@ export default function SavingsPage() {
                 {editingId === s.id ? (
                   /* Edit mode */
                   <div className="flex items-start gap-3 w-full">
-                    <textarea
-                      value={editDesc}
-                      onChange={(e) => setEditDesc(e.target.value)}
-                      rows={2}
-                      className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring resize-none"
-                      autoFocus
-                    />
+                    <div className="flex-1">
+                      <WysiwygEditor
+                        value={editDesc}
+                        onChange={setEditDesc}
+                        placeholder="Descripción"
+                        minHeight={60}
+                      />
+                    </div>
                     <div className="w-28">
                       <input
                         type="number"
@@ -303,7 +304,7 @@ export default function SavingsPage() {
                     <div className="flex items-center gap-3 min-w-0">
                       <PiggyBank className="size-4 text-muted-foreground shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{s.description}</p>
+                        <p className="text-sm font-medium truncate" dangerouslySetInnerHTML={{ __html: s.description }} />
                         <p className="text-xs text-muted-foreground">{s.created_at}</p>
                       </div>
                     </div>

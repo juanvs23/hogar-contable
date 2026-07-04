@@ -44,8 +44,8 @@ export default function TransactionRow({
       <td className="py-3 px-4 text-sm tabular-nums text-muted-foreground whitespace-nowrap">
         {formatDate(transaction.date)}
       </td>
-      <td className="py-3 px-4 text-sm font-medium text-foreground">
-        {transaction.description}
+      <td className="py-3 px-4 text-sm font-medium text-foreground max-w-[200px] truncate">
+        <span dangerouslySetInnerHTML={{ __html: transaction.description }} />
       </td>
       <td className="py-3 px-4 text-sm text-muted-foreground">
         <span
