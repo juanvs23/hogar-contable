@@ -299,13 +299,13 @@ export default function TransactionDialog({
             <label htmlFor="desc" className="text-sm font-medium mb-1.5 block">
               Descripción
             </label>
-            <input
+            <textarea
               id="desc"
-              type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ej: Sueldo de junio"
-              className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
+              rows={2}
+              className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring resize-none"
             />
             {errors.description && (
               <p className="text-xs text-destructive mt-1">{errors.description}</p>

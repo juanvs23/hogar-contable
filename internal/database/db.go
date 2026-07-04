@@ -102,27 +102,25 @@ func (db *DB) migrate() error {
 		`ALTER TABLE transactions ADD COLUMN rate_official REAL NOT NULL DEFAULT 0`,
 		`ALTER TABLE transactions ADD COLUMN rate_p2p REAL NOT NULL DEFAULT 0`,
 
-		// Seed default categories (refresh on each startup)
-		`UPDATE transactions SET category_id=NULL WHERE category_id IN (SELECT id FROM categories WHERE is_default=1)`,
-		`DELETE FROM categories WHERE is_default=1`,
-		`INSERT INTO categories(name, type, is_default) VALUES
-			('Mercado', 'expense', 1),
-			('Alquiler', 'expense', 1),
-			('Efectivo', 'expense', 1),
-			('Reparación hogar', 'expense', 1),
-			('Gastos auto', 'expense', 1),
-			('Salidas', 'expense', 1),
-			('Servicios (teléfonos)', 'expense', 1),
-			('Servicios (internet)', 'expense', 1),
-			('Servicios (suscripciones)', 'expense', 1),
-			('Gastos médicos', 'expense', 1),
-			('Corte de cabello', 'expense', 1),
-			('Deporte', 'expense', 1),
-			('Compra muebles/inmuebles/ropa', 'expense', 1),
-			('Gasto mascota', 'expense', 1),
-			('Salario (Juan)', 'income', 1),
-			('Salario (Nardy)', 'income', 1),
-			('Ingresos extras', 'income', 1)`,
+		// Seed default categories (IDs fijos para mantener referencias)
+		`INSERT OR IGNORE INTO categories(id, name, type, is_default) VALUES
+			(1, 'Mercado', 'expense', 1),
+			(2, 'Alquiler', 'expense', 1),
+			(3, 'Efectivo', 'expense', 1),
+			(4, 'Reparación hogar', 'expense', 1),
+			(5, 'Gastos auto', 'expense', 1),
+			(6, 'Salidas', 'expense', 1),
+			(7, 'Servicios (teléfonos)', 'expense', 1),
+			(8, 'Servicios (internet)', 'expense', 1),
+			(9, 'Servicios (suscripciones)', 'expense', 1),
+			(10, 'Gastos médicos', 'expense', 1),
+			(11, 'Corte de cabello', 'expense', 1),
+			(12, 'Deporte', 'expense', 1),
+			(13, 'Compra muebles/inmuebles/ropa', 'expense', 1),
+			(14, 'Gasto mascota', 'expense', 1),
+			(15, 'Salario (Juan)', 'income', 1),
+			(16, 'Salario (Nardy)', 'income', 1),
+			(17, 'Ingresos extras', 'income', 1)`,
 	}
 
 	for _, m := range migrations {
