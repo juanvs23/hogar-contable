@@ -11,7 +11,8 @@ type SavingMovement struct {
 	ID                   int64   `json:"id"`
 	AccountID            int64   `json:"account_id"`
 	Type                 string  `json:"type"` // "deposit" or "withdraw"
-	AmountUsd            float64 `json:"amount_usd"`
+	AmountUsd            float64 `json:"amount_usd"`  // USD BCV
+	AmountUsdt           float64 `json:"amount_usdt"` // USDT
 	AmountBs             float64 `json:"amount_bs"`
 	Description          string  `json:"description"`
 	CreatedTransactionID *int64  `json:"created_transaction_id,omitempty"`

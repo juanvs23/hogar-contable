@@ -96,6 +96,7 @@ export namespace core {
 	    account_id: number;
 	    type: string;
 	    amount_usd: number;
+	    amount_usdt: number;
 	    amount_bs: number;
 	    description: string;
 	    created_transaction_id?: number;
@@ -111,6 +112,7 @@ export namespace core {
 	        this.account_id = source["account_id"];
 	        this.type = source["type"];
 	        this.amount_usd = source["amount_usd"];
+	        this.amount_usdt = source["amount_usdt"];
 	        this.amount_bs = source["amount_bs"];
 	        this.description = source["description"];
 	        this.created_transaction_id = source["created_transaction_id"];

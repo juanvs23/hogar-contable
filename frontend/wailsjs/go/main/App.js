@@ -50,8 +50,8 @@ export function DeleteTransaction(arg1) {
   return window['go']['main']['App']['DeleteTransaction'](arg1);
 }
 
-export function DepositToAccount(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['DepositToAccount'](arg1, arg2, arg3, arg4);
+export function DepositToAccount(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['DepositToAccount'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function ExportReportToExcel(arg1, arg2) {
@@ -134,14 +134,14 @@ export function UpdateSavingAccount(arg1, arg2, arg3) {
   return window['go']['main']['App']['UpdateSavingAccount'](arg1, arg2, arg3);
 }
 
-export function UpdateSavingMovement(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['UpdateSavingMovement'](arg1, arg2, arg3, arg4);
+export function UpdateSavingMovement(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['UpdateSavingMovement'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function UpdateTransaction(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) {
   return window['go']['main']['App']['UpdateTransaction'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
 
-export function WithdrawFromAccount(arg1, arg2, arg3, arg4, arg5, arg6) {
-  return window['go']['main']['App']['WithdrawFromAccount'](arg1, arg2, arg3, arg4, arg5, arg6);
+export function WithdrawFromAccount(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['App']['WithdrawFromAccount'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }

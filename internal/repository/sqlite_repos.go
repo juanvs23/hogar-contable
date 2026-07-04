@@ -465,8 +465,8 @@ func NewSavingMovementRepo(db *sql.DB) SavingMovementRepository {
 
 func (r *SQLiteSavingMovementRepo) Create(m *core.SavingMovement) (int64, error) {
 	res, err := r.db.Exec(
-		`INSERT INTO saving_movements (account_id, type, amount_usd, amount_bs, description, created_transaction_id) VALUES (?, ?, ?, ?, ?, ?)`,
-		m.AccountID, m.Type, m.AmountUsd, m.AmountBs, m.Description, m.CreatedTransactionID)
+		`INSERT INTO saving_movements (account_id, type, amount_usd, amount_usdt, amount_bs, description, created_transaction_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		m.AccountID, m.Type, m.AmountUsd, m.AmountUsdt, m.AmountBs, m.Description, m.CreatedTransactionID)
 	if err != nil {
 		return 0, fmt.Errorf("create movement: %w", err)
 	}
@@ -474,13 +474,13 @@ func (r *SQLiteSavingMovementRepo) Create(m *core.SavingMovement) (int64, error)
 }
 
 func (r *SQLiteSavingMovementRepo) Update(m *core.SavingMovement) error {
-	_, err := r.db.Exec(`UPDATE saving_movements SET amount_usd=?, amount_bs=?, description=? WHERE id=?`,
-		m.AmountUsd, m.AmountBs, m.Description, m.ID)
+	_, err := r.db.Exec(`UPDATE saving_movements SET amount_usd=?, amount_usdt=?, amount_bs=?, description=? WHERE id=?`,
+		m.AmountUsd, m.AmountUsdt, m.AmountBs, m.Description, m.ID)
 	return err
 }
 
 func (r *SQLiteSavingMovementRepo) ListByAccount(accountID int64) ([]core.SavingMovement, error) {
-	rows, err := r.db.Query(`SELECT id, account_id, type, amount_usd, amount_bs, description, created_transaction_id, created_at FROM saving_movements WHERE account_id=? ORDER BY created_at DESC`, accountID)
+	rows, err := r.db.Query(`SELECT id, account_id, type, amount_usd, amount_usdt, amount_bs, description, created_transaction_id, created_at FROM saving_movements WHERE account_id=? ORDER BY created_at DESC`, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("list movements: %w", err)
 	}
@@ -488,7 +488,7 @@ func (r *SQLiteSavingMovementRepo) ListByAccount(accountID int64) ([]core.Saving
 	movs := make([]core.SavingMovement, 0)
 	for rows.Next() {
 		var m core.SavingMovement
-		if err := rows.Scan(&m.ID, &m.AccountID, &m.Type, &m.AmountUsd, &m.AmountBs, &m.Description, &m.CreatedTransactionID, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.AccountID, &m.Type, &m.AmountUsd, &m.AmountUsdt, &m.AmountBs, &m.Description, &m.CreatedTransactionID, &m.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan movement: %w", err)
 		}
 		movs = append(movs, m)

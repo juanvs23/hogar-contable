@@ -39,7 +39,8 @@ func (s *SavingService) DeleteAccount(id int64) error {
 
 type DepositInput struct {
 	AccountID   int64   `json:"account_id"`
-	AmountUsd   float64 `json:"amount_usd"`
+	AmountUsd   float64 `json:"amount_usd"`  // USD BCV
+	AmountUsdt  float64 `json:"amount_usdt"` // USDT
 	AmountBs    float64 `json:"amount_bs"`
 	Description string  `json:"description"`
 }
@@ -49,6 +50,7 @@ func (s *SavingService) Deposit(in DepositInput) (int64, error) {
 		AccountID:   in.AccountID,
 		Type:        "deposit",
 		AmountUsd:   in.AmountUsd,
+		AmountUsdt:  in.AmountUsdt,
 		AmountBs:    in.AmountBs,
 		Description: in.Description,
 	}
@@ -57,15 +59,15 @@ func (s *SavingService) Deposit(in DepositInput) (int64, error) {
 
 type WithdrawInput struct {
 	AccountID      int64   `json:"account_id"`
-	AmountUsd      float64 `json:"amount_usd"`
+	AmountUsd      float64 `json:"amount_usd"`  // USD BCV
+	AmountUsdt     float64 `json:"amount_usdt"` // USDT
 	AmountBs       float64 `json:"amount_bs"`
 	Description    string  `json:"description"`
-	CreateIncome   bool    `json:"create_income"`   // if true, creates a transaction
-	IncomeCategory *int64  `json:"income_category"` // category for the income tx
+	CreateIncome   bool    `json:"create_income"`
+	IncomeCategory *int64  `json:"income_category"`
 }
 
 func (s *SavingService) Withdraw(in WithdrawInput) (int64, error) {
-	// Check balance
 	usd, _, err := s.accRepo.GetBalance(in.AccountID)
 	if err != nil {
 		return 0, fmt.Errorf("check balance: %w", err)
@@ -78,19 +80,20 @@ func (s *SavingService) Withdraw(in WithdrawInput) (int64, error) {
 		AccountID:   in.AccountID,
 		Type:        "withdraw",
 		AmountUsd:   in.AmountUsd,
+		AmountUsdt:  in.AmountUsdt,
 		AmountBs:    in.AmountBs,
 		Description: in.Description,
 	}
 
-	// If user wants to create income transaction
 	if in.CreateIncome {
 		tx := &core.Transaction{
-			Type:        core.Income,
-			Description: fmt.Sprintf("Retiro de ahorro: %s", in.Description),
-			AmountBs:    in.AmountBs,
+			Type:         core.Income,
+			Description:  fmt.Sprintf("Retiro de ahorro: %s", in.Description),
+			AmountBs:     in.AmountBs,
 			AmountUsdBcv: in.AmountUsd,
-			Date:        "", // service will set today
-			CategoryID:  in.IncomeCategory,
+			AmountUsdt:   in.AmountUsdt,
+			Date:         "",
+			CategoryID:   in.IncomeCategory,
 		}
 		txID, err := s.txService.Create(tx)
 		if err != nil {
@@ -106,8 +109,8 @@ func (s *SavingService) ListMovements(accountID int64) ([]core.SavingMovement, e
 	return s.movRepo.ListByAccount(accountID)
 }
 
-func (s *SavingService) UpdateMovement(id int64, amountUsd, amountBs float64, description string) error {
-	return s.movRepo.Update(&core.SavingMovement{ID: id, AmountUsd: amountUsd, AmountBs: amountBs, Description: description})
+func (s *SavingService) UpdateMovement(id int64, amountUsd, amountUsdt, amountBs float64, description string) error {
+	return s.movRepo.Update(&core.SavingMovement{ID: id, AmountUsd: amountUsd, AmountUsdt: amountUsdt, AmountBs: amountBs, Description: description})
 }
 
 func (s *SavingService) DeleteMovement(id int64) error {

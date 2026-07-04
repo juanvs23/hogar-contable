@@ -108,6 +108,7 @@ func (db *DB) migrate() error {
 			account_id INTEGER NOT NULL,
 			type TEXT NOT NULL CHECK(type IN ('deposit','withdraw')),
 			amount_usd REAL NOT NULL DEFAULT 0,
+			amount_usdt REAL NOT NULL DEFAULT 0,
 			amount_bs REAL NOT NULL DEFAULT 0,
 			description TEXT NOT NULL DEFAULT '',
 			created_transaction_id INTEGER,
@@ -117,6 +118,7 @@ func (db *DB) migrate() error {
 		)`,
 
 		// Migrate existing tables: add new columns safely
+		`ALTER TABLE saving_movements ADD COLUMN amount_usdt REAL NOT NULL DEFAULT 0`,
 		`ALTER TABLE transactions ADD COLUMN amount_usd_bcv REAL NOT NULL DEFAULT 0`,
 		`ALTER TABLE transactions ADD COLUMN amount_usdt REAL NOT NULL DEFAULT 0`,
 		`ALTER TABLE transactions ADD COLUMN rate_official REAL NOT NULL DEFAULT 0`,
