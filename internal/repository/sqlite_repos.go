@@ -420,13 +420,14 @@ func (r *SQLiteSavingAccountRepo) Delete(id int64) error {
 	return err
 }
 
-func (r *SQLiteSavingAccountRepo) GetBalance(accountID int64) (usd, bs float64, err error) {
+func (r *SQLiteSavingAccountRepo) GetBalance(accountID int64) (usd, usdt, bs float64, err error) {
 	row := r.db.QueryRow(`
 		SELECT
 			COALESCE(SUM(CASE WHEN type='deposit' THEN amount_usd ELSE -amount_usd END), 0),
+			COALESCE(SUM(CASE WHEN type='deposit' THEN amount_usdt ELSE -amount_usdt END), 0),
 			COALESCE(SUM(CASE WHEN type='deposit' THEN amount_bs ELSE -amount_bs END), 0)
 		FROM saving_movements WHERE account_id=?`, accountID)
-	err = row.Scan(&usd, &bs)
+	err = row.Scan(&usd, &usdt, &bs)
 	return
 }
 
@@ -434,6 +435,7 @@ func (r *SQLiteSavingAccountRepo) GetAllBalances() ([]core.AccountBalance, error
 	rows, err := r.db.Query(`
 		SELECT a.id, a.name, a.description, a.created_at,
 			COALESCE(SUM(CASE WHEN m.type='deposit' THEN m.amount_usd ELSE -m.amount_usd END), 0),
+			COALESCE(SUM(CASE WHEN m.type='deposit' THEN m.amount_usdt ELSE -m.amount_usdt END), 0),
 			COALESCE(SUM(CASE WHEN m.type='deposit' THEN m.amount_bs ELSE -m.amount_bs END), 0)
 		FROM saving_accounts a
 		LEFT JOIN saving_movements m ON m.account_id = a.id
@@ -445,7 +447,7 @@ func (r *SQLiteSavingAccountRepo) GetAllBalances() ([]core.AccountBalance, error
 	balances := make([]core.AccountBalance, 0)
 	for rows.Next() {
 		var ab core.AccountBalance
-		if err := rows.Scan(&ab.Account.ID, &ab.Account.Name, &ab.Account.Description, &ab.Account.CreatedAt, &ab.BalanceUsd, &ab.BalanceBs); err != nil {
+		if err := rows.Scan(&ab.Account.ID, &ab.Account.Name, &ab.Account.Description, &ab.Account.CreatedAt, &ab.BalanceUsd, &ab.BalanceUsdt, &ab.BalanceBs); err != nil {
 			return nil, fmt.Errorf("scan balance: %w", err)
 		}
 		balances = append(balances, ab)

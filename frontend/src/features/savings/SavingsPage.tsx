@@ -126,6 +126,7 @@ export default function SavingsPage() {
     catch (err) { console.error(err) }
   }
 
+  const totalUsdt = accounts.reduce((s, a) => s + a.balance_usdt, 0)
   const totalUsd = accounts.reduce((s, a) => s + a.balance_usd, 0)
   const totalBs = accounts.reduce((s, a) => s + a.balance_bs, 0)
 
@@ -146,8 +147,8 @@ export default function SavingsPage() {
       {/* Total global */}
       <div className="rounded-lg border border-border bg-card p-4">
         <p className="text-xs text-muted-foreground uppercase tracking-wider">Total ahorrado</p>
-        <p className="text-2xl font-bold text-chart-1">{formatUsd(totalUsd)}</p>
-        <p className="text-xs text-muted-foreground">{formatBs(totalBs)}</p>
+        <p className="text-2xl font-bold text-chart-1">{formatUsd(totalUsdt)} USDT</p>
+        <p className="text-xs text-muted-foreground">{formatUsd(totalUsd)} BCV / {formatBs(totalBs)}</p>
       </div>
 
       {/* Create account form */}
@@ -197,8 +198,8 @@ export default function SavingsPage() {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <p className="text-sm font-bold tabular-nums">{formatUsd(ab.balance_usd)}</p>
-                      <p className="text-xs text-muted-foreground tabular-nums">{formatBs(ab.balance_bs)}</p>
+                      <p className="text-sm font-bold tabular-nums">{formatUsd(ab.balance_usdt)}</p>
+                      <p className="text-xs text-muted-foreground tabular-nums">{formatUsd(ab.balance_usd)} BCV / {formatBs(ab.balance_bs)}</p>
                     </div>
                     {isExpanded ? <EyeOff className="size-4 text-muted-foreground" /> : <Eye className="size-4 text-muted-foreground" />}
                   </div>

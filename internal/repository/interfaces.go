@@ -30,7 +30,7 @@ type SavingAccountRepository interface {
 	List() ([]core.SavingAccount, error)
 	Update(acc *core.SavingAccount) error
 	Delete(id int64) error
-	GetBalance(accountID int64) (usd, bs float64, err error)
+	GetBalance(accountID int64) (usd, usdt, bs float64, err error)
 	GetAllBalances() ([]core.AccountBalance, error)
 }
 

@@ -68,7 +68,7 @@ type WithdrawInput struct {
 }
 
 func (s *SavingService) Withdraw(in WithdrawInput) (int64, error) {
-	usd, _, err := s.accRepo.GetBalance(in.AccountID)
+	usd, _, _, err := s.accRepo.GetBalance(in.AccountID)
 	if err != nil {
 		return 0, fmt.Errorf("check balance: %w", err)
 	}
@@ -117,6 +117,6 @@ func (s *SavingService) DeleteMovement(id int64) error {
 	return s.movRepo.Delete(id)
 }
 
-func (s *SavingService) GetAccountBalance(accountID int64) (usd, bs float64, err error) {
+func (s *SavingService) GetAccountBalance(accountID int64) (usd, usdt, bs float64, err error) {
 	return s.accRepo.GetBalance(accountID)
 }

@@ -20,7 +20,8 @@ type SavingMovement struct {
 }
 
 type AccountBalance struct {
-	Account   SavingAccount `json:"account"`
-	BalanceUsd float64      `json:"balance_usd"`
+	Account    SavingAccount `json:"account"`
+	BalanceUsd float64      `json:"balance_usd"`  // USD BCV
+	BalanceUsdt float64     `json:"balance_usdt"` // USDT
 	BalanceBs  float64      `json:"balance_bs"`
 }

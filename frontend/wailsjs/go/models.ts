@@ -21,6 +21,7 @@ export namespace core {
 	export class AccountBalance {
 	    account: SavingAccount;
 	    balance_usd: number;
+	    balance_usdt: number;
 	    balance_bs: number;
 	
 	    static createFrom(source: any = {}) {
@@ -31,6 +32,7 @@ export namespace core {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.account = this.convertValues(source["account"], SavingAccount);
 	        this.balance_usd = source["balance_usd"];
+	        this.balance_usdt = source["balance_usdt"];
 	        this.balance_bs = source["balance_bs"];
 	    }
 	
