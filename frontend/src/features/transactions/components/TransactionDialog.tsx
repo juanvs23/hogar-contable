@@ -142,34 +142,35 @@ export default function TransactionDialog({
   const inputAmount = parseFloat(amountInput) || 0
 
   // Calculate converted amounts based on selected currency
+  const round2 = (v: number) => Math.round(v * 100) / 100
+
   const calcAmounts = useCallback(() => {
     const ro = rates?.official ?? 0
     const rp = rates?.p2p ?? 0
     let bs = 0, usd = 0, usdt = 0
 
     if (ro <= 0 || rp <= 0) {
-      // No rates available — can't convert
       return { bs: 0, usd: 0, usdt: 0 }
     }
 
     switch (currency) {
       case "bs":
         bs = inputAmount
-        usd = inputAmount / ro
-        usdt = inputAmount / rp
+        usd = round2(inputAmount / ro)
+        usdt = round2(inputAmount / rp)
         break
       case "usd_bcv":
         usd = inputAmount
-        bs = inputAmount * ro
-        usdt = (inputAmount * ro) / rp
+        bs = round2(inputAmount * ro)
+        usdt = round2((inputAmount * ro) / rp)
         break
       case "usdt":
         usdt = inputAmount
-        bs = inputAmount * rp
-        usd = (inputAmount * rp) / ro
+        bs = round2(inputAmount * rp)
+        usd = round2((inputAmount * rp) / ro)
         break
     }
-    return { bs, usd, usdt }
+    return { bs: round2(bs), usd: round2(usd), usdt: round2(usdt) }
   }, [inputAmount, currency, rates])
 
   const { bs: calcBs, usd: calcUsd, usdt: calcUsdt } = calcAmounts()

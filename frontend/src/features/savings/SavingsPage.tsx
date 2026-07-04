@@ -100,8 +100,9 @@ export default function SavingsPage() {
     if (!movAccId || !parseFloat(movUsd)) return
     setProcessingMov(true)
     try {
+      const round2 = (v: number) => Math.round(v * 100) / 100
       const usd = parseFloat(movUsd)
-      const bs = rates?.official ? usd * rates.official : 0
+      const bs = rates?.official ? round2(usd * rates.official) : 0
       if (movType === "deposit") {
         await DepositToAccount(movAccId, usd, bs, movDesc)
       } else {
@@ -328,7 +329,8 @@ export default function SavingsPage() {
                 <Button size="xs" onClick={async () => {
                   setSavingMov(true)
                   try {
-                    const bs = rates?.official ? parseFloat(editMovUsd) * rates.official : 0
+                    const round2 = (v: number) => Math.round(v * 100) / 100
+                    const bs = rates?.official ? round2(parseFloat(editMovUsd) * rates.official) : 0
                     await UpdateSavingMovement(editMov.id, parseFloat(editMovUsd), bs, editMovDesc)
                     setEditMov(null)
                     if (expandedId) loadMovements(expandedId)
