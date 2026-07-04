@@ -106,6 +106,14 @@ func (s *SavingService) ListMovements(accountID int64) ([]core.SavingMovement, e
 	return s.movRepo.ListByAccount(accountID)
 }
 
+func (s *SavingService) UpdateMovement(id int64, amountUsd, amountBs float64, description string) error {
+	return s.movRepo.Update(&core.SavingMovement{ID: id, AmountUsd: amountUsd, AmountBs: amountBs, Description: description})
+}
+
+func (s *SavingService) DeleteMovement(id int64) error {
+	return s.movRepo.Delete(id)
+}
+
 func (s *SavingService) GetAccountBalance(accountID int64) (usd, bs float64, err error) {
 	return s.accRepo.GetBalance(accountID)
 }

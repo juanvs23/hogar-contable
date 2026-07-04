@@ -10,6 +10,8 @@ import {
   DepositToAccount,
   WithdrawFromAccount,
   ListAccountMovements,
+  UpdateSavingMovement,
+  DeleteSavingMovement,
   ExportSavingsToExcel,
   GetCurrentExchangeRates,
   ListCategories,
@@ -45,6 +47,12 @@ export default function SavingsPage() {
   const [movAsIncome, setMovAsIncome] = useState(false)
   const [movIncomeCat, setMovIncomeCat] = useState<number | null>(null)
   const [processingMov, setProcessingMov] = useState(false)
+
+  // Edit movement
+  const [editMov, setEditMov] = useState<Movement | null>(null)
+  const [editMovUsd, setEditMovUsd] = useState("")
+  const [editMovDesc, setEditMovDesc] = useState("")
+  const [savingMov, setSavingMov] = useState(false)
 
   // Edit account
   const [editId, setEditId] = useState<number | null>(null)
@@ -227,15 +235,19 @@ export default function SavingsPage() {
                     ) : (
                       <div className="space-y-1 max-h-60 overflow-y-auto">
                         {accMovs.map(m => (
-                          <div key={m.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
-                            <div className="flex items-center gap-2 min-w-0">
+                          <div key={m.id} className="group flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
                               <span className={cn("inline-block w-1.5 h-1.5 rounded-full shrink-0", m.type === "deposit" ? "bg-chart-2" : "bg-destructive")} />
-                              <span className="truncate">{m.description || (m.type === "deposit" ? "Depósito" : "Retiro")}</span>
-                              {m.created_transaction_id && <span className="text-[10px] text-chart-2 font-medium">→ Ingreso</span>}
+                              <span className="truncate" dangerouslySetInnerHTML={{ __html: m.description || (m.type === "deposit" ? "Depósito" : "Retiro") }} />
+                              {m.created_transaction_id && <span className="text-[10px] text-chart-2 font-medium shrink-0">→ Ingreso</span>}
                             </div>
                             <span className={cn("tabular-nums font-medium whitespace-nowrap ml-2", m.type === "deposit" ? "text-chart-2" : "text-destructive")}>
                               {m.type === "deposit" ? "+" : "-"}{formatUsd(m.amount_usd)}
                             </span>
+                            <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon-xs" onClick={async (e) => { e.stopPropagation(); setEditMov(m); setEditMovUsd(String(m.amount_usd)); setEditMovDesc(m.description) }}><Pencil className="size-2.5" /></Button>
+                              <Button variant="ghost" size="icon-xs" className="text-destructive" onClick={async (e) => { e.stopPropagation(); const plainDesc = (m.description || '').replace(/<[^>]*>/g, ''); if (window.confirm(`¿Eliminar "${plainDesc || (m.type === 'deposit' ? 'depósito' : 'retiro')}"?`)) { await DeleteSavingMovement(m.id); loadMovements(ab.account.id); await fetchAll() } }}><Trash2 className="size-2.5" /></Button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -288,6 +300,42 @@ export default function SavingsPage() {
                 <Button size="xs" variant={movType === "deposit" ? "default" : "destructive"} onClick={handleMovement} disabled={processingMov || !parseFloat(movUsd)}>
                   {processingMov ? "Procesando..." : movType === "deposit" ? "Depositar" : "Retirar"}
                 </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit movement dialog */}
+      {editMov && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/80" onClick={() => setEditMov(null)}>
+          <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+            <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Editar movimiento</h3>
+              <Button variant="ghost" size="icon-xs" onClick={() => setEditMov(null)}><Trash2 className="size-3.5" /></Button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Monto USD</label>
+                <input type="number" step="0.01" value={editMovUsd} onChange={e => setEditMovUsd(e.target.value)} className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Descripción</label>
+                <WysiwygEditor value={editMovDesc} onChange={setEditMovDesc} minHeight={50} />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <Button variant="outline" size="xs" onClick={() => setEditMov(null)}>Cancelar</Button>
+                <Button size="xs" onClick={async () => {
+                  setSavingMov(true)
+                  try {
+                    const bs = rates?.official ? parseFloat(editMovUsd) * rates.official : 0
+                    await UpdateSavingMovement(editMov.id, parseFloat(editMovUsd), bs, editMovDesc)
+                    setEditMov(null)
+                    if (expandedId) loadMovements(expandedId)
+                    await fetchAll()
+                  } catch (err) { console.error(err) }
+                  finally { setSavingMov(false) }
+                }} disabled={savingMov || !parseFloat(editMovUsd)}>{savingMov ? "Guardando..." : "Guardar"}</Button>
               </div>
             </div>
           </div>

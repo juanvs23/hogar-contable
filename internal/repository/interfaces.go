@@ -36,6 +36,7 @@ type SavingAccountRepository interface {
 
 type SavingMovementRepository interface {
 	Create(m *core.SavingMovement) (int64, error)
+	Update(m *core.SavingMovement) error
 	ListByAccount(accountID int64) ([]core.SavingMovement, error)
 	Delete(id int64) error
 }

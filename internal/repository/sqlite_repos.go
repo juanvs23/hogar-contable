@@ -473,6 +473,12 @@ func (r *SQLiteSavingMovementRepo) Create(m *core.SavingMovement) (int64, error)
 	return res.LastInsertId()
 }
 
+func (r *SQLiteSavingMovementRepo) Update(m *core.SavingMovement) error {
+	_, err := r.db.Exec(`UPDATE saving_movements SET amount_usd=?, amount_bs=?, description=? WHERE id=?`,
+		m.AmountUsd, m.AmountBs, m.Description, m.ID)
+	return err
+}
+
 func (r *SQLiteSavingMovementRepo) ListByAccount(accountID int64) ([]core.SavingMovement, error) {
 	rows, err := r.db.Query(`SELECT id, account_id, type, amount_usd, amount_bs, description, created_transaction_id, created_at FROM saving_movements WHERE account_id=? ORDER BY created_at DESC`, accountID)
 	if err != nil {

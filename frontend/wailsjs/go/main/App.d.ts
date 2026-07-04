@@ -24,6 +24,8 @@ export function DeleteCategory(arg1:number):Promise<void>;
 
 export function DeleteSavingAccount(arg1:number):Promise<void>;
 
+export function DeleteSavingMovement(arg1:number):Promise<void>;
+
 export function DeleteTransaction(arg1:number):Promise<void>;
 
 export function DepositToAccount(arg1:number,arg2:number,arg3:number,arg4:string):Promise<number>;
@@ -67,6 +69,8 @@ export function ListTransactions(arg1:string,arg2:string,arg3:string):Promise<Ar
 export function UpdateCategory(arg1:number,arg2:string,arg3:string):Promise<void>;
 
 export function UpdateSavingAccount(arg1:number,arg2:string,arg3:string):Promise<void>;
+
+export function UpdateSavingMovement(arg1:number,arg2:number,arg3:number,arg4:string):Promise<void>;
 
 export function UpdateTransaction(arg1:number,arg2:string,arg3:string,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number,arg9:any,arg10:string):Promise<void>;
 

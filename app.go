@@ -226,6 +226,14 @@ func (a *App) ListAccountMovements(accountID int64) ([]core.SavingMovement, erro
 	return a.savingSvc.ListMovements(accountID)
 }
 
+func (a *App) UpdateSavingMovement(id int64, amountUsd, amountBs float64, description string) error {
+	return a.savingSvc.UpdateMovement(id, amountUsd, amountBs, description)
+}
+
+func (a *App) DeleteSavingMovement(id int64) error {
+	return a.savingSvc.DeleteMovement(id)
+}
+
 // --- Export ---
 
 func (a *App) ExportTransactionsToExcel(dateFrom, dateTo, txType string) (string, error) {

@@ -42,6 +42,10 @@ export function DeleteSavingAccount(arg1) {
   return window['go']['main']['App']['DeleteSavingAccount'](arg1);
 }
 
+export function DeleteSavingMovement(arg1) {
+  return window['go']['main']['App']['DeleteSavingMovement'](arg1);
+}
+
 export function DeleteTransaction(arg1) {
   return window['go']['main']['App']['DeleteTransaction'](arg1);
 }
@@ -128,6 +132,10 @@ export function UpdateCategory(arg1, arg2, arg3) {
 
 export function UpdateSavingAccount(arg1, arg2, arg3) {
   return window['go']['main']['App']['UpdateSavingAccount'](arg1, arg2, arg3);
+}
+
+export function UpdateSavingMovement(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['UpdateSavingMovement'](arg1, arg2, arg3, arg4);
 }
 
 export function UpdateTransaction(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) {
