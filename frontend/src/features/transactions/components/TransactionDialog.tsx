@@ -261,194 +261,92 @@ export default function TransactionDialog({
         className="bg-card border border-border rounded-lg shadow-lg w-full max-w-md mx-4"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-          <h3 className="text-base font-semibold">{editingTransaction ? "Editar Transacción" : "Nueva Transacción"}</h3>
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+          <h3 className="text-sm font-semibold">{editingTransaction ? "Editar" : "Nueva"}</h3>
           <Button variant="ghost" size="icon-xs" onClick={onClose}>
-            <X className="size-4" />
+            <X className="size-3.5" />
           </Button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-3 space-y-1.5">
           {/* Type selector — expense = red, income = green */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Tipo</label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={type === "expense" ? "destructive" : "secondary"}
-                size="sm"
-                onClick={() => { setType("expense"); setCategoryId(null) }}
-                className="flex-1"
-              >
-                Gasto
-              </Button>
-              <Button
-                type="button"
-                variant={type === "income" ? "default" : "secondary"}
-                size="sm"
-                onClick={() => { setType("income"); setCategoryId(null) }}
-                className="flex-1"
-              >
-                Ingreso
-              </Button>
+            <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Tipo</label>
+            <div className="flex gap-1.5">
+              <Button type="button" variant={type === "expense" ? "destructive" : "secondary"} size="xs" onClick={() => { setType("expense"); setCategoryId(null) }} className="flex-1">Gasto</Button>
+              <Button type="button" variant={type === "income" ? "default" : "secondary"} size="xs" onClick={() => { setType("income"); setCategoryId(null) }} className="flex-1">Ingreso</Button>
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <label htmlFor="desc" className="text-sm font-medium mb-1.5 block">
-              Descripción
-            </label>
-            <WysiwygEditor
-              key={`desc-${open}`}
-              value={description}
-              onChange={setDescription}
-              placeholder="Ej: Sueldo de junio"
-            />
-            {errors.description && (
-              <p className="text-xs text-destructive mt-1">{errors.description}</p>
-            )}
+            <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Descripción</label>
+            <WysiwygEditor key={`desc-${open}`} value={description} onChange={setDescription} placeholder="Ej: Sueldo de junio" />
+            {errors.description && <p className="text-[10px] text-destructive mt-0.5">{errors.description}</p>}
           </div>
 
           {/* Amount — single input + currency selector */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Monto</label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={amountInput}
-                onChange={(e) => setAmountInput(e.target.value)}
-                placeholder="0.00"
-                className="h-8 flex-1 rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
-              />
+            <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Monto</label>
+            <div className="flex gap-1.5">
+              <input type="number" step="0.01" min="0" value={amountInput} onChange={(e) => setAmountInput(e.target.value)} placeholder="0.00" className="h-7 flex-1 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
               <div className="flex gap-1">
                 {(["bs", "usd_bcv", "usdt"] as CurrencyType[]).map((c) => (
-                  <Button
-                    key={c}
-                    type="button"
-                    variant={currency === c ? "default" : "secondary"}
-                    size="sm"
-                    onClick={() => setCurrency(c)}
-                    className="min-w-[60px]"
-                  >
-                    {currencyLabels[c]}
-                  </Button>
+                  <Button key={c} type="button" variant={currency === c ? "default" : "secondary"} size="xs" onClick={() => setCurrency(c)} className="min-w-[48px]">{currencyLabels[c]}</Button>
                 ))}
               </div>
             </div>
-            {errors.amount && (
-              <p className="text-xs text-destructive mt-1">{errors.amount}</p>
-            )}
+            {errors.amount && <p className="text-[10px] text-destructive mt-0.5">{errors.amount}</p>}
           </div>
 
           {/* Converted amounts */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">
+            <label className="text-xs font-medium mb-0.5 block text-muted-foreground">
               Equivalencias
-              {ratesLoading && (
-                <span className="text-xs text-muted-foreground ml-2">(cargando tasas...)</span>
-              )}
-              {!hasRates && !ratesLoading && (
-                <span className="text-xs text-destructive ml-2">(tasas no disponibles)</span>
-              )}
+              {ratesLoading && <span className="text-[10px] text-muted-foreground ml-1">(cargando...)</span>}
+              {!hasRates && !ratesLoading && <span className="text-[10px] text-destructive ml-1">(no disponibles)</span>}
             </label>
-            <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Bs</span>
-                <span className={cn("font-mono font-medium tabular-nums", calcBs > 0 ? "text-foreground" : "text-muted-foreground")}>
-                  {formatCurrency(calcBs, "VES")}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">USD BCV</span>
-                <span className={cn("font-mono font-medium tabular-nums", calcUsd > 0 ? "text-foreground" : "text-muted-foreground")}>
-                  {formatCurrency(calcUsd, "USD")}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">USDT</span>
-                <span className={cn("font-mono font-medium tabular-nums", calcUsdt > 0 ? "text-foreground" : "text-muted-foreground")}>
-                  {formatCurrency(calcUsdt, "USD")}
-                </span>
-              </div>
-              {hasRates && (
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border mt-1">
-                  <span>1 USD BCV = {formatCurrency(ro, "VES")}</span>
-                  <span>1 USDT = {formatCurrency(rp, "VES")}</span>
-                </div>
-              )}
+            <div className="rounded border border-border bg-muted/50 p-2 space-y-0.5">
+              {(["Bs", "USD BCV", "USDT"] as const).map((label, i) => {
+                const val = i === 0 ? calcBs : i === 1 ? calcUsd : calcUsdt
+                return (
+                  <div key={label} className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className={cn("font-mono font-medium tabular-nums", val > 0 ? "text-foreground" : "text-muted-foreground")}>{formatCurrency(val, i === 0 ? "VES" : "USD")}</span>
+                  </div>
+                )
+              })}
+              {hasRates && <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5 border-t border-border mt-0.5"><span>1 USD BCV = {formatCurrency(ro, "VES")}</span><span>1 USDT = {formatCurrency(rp, "VES")}</span></div>}
             </div>
           </div>
 
           {/* Category */}
           <div>
-            <label htmlFor="category" className="text-sm font-medium mb-1.5 block">
-              Categoría
-            </label>
-            <CategorySelect
-              txType={type}
-              value={categoryId}
-              onChange={setCategoryId}
-            />
+            <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Categoría</label>
+            <CategorySelect txType={type} value={categoryId} onChange={setCategoryId} />
           </div>
 
           {/* Date — dropdowns */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Fecha</label>
-            <div className="flex gap-2">
-              <select
-                value={dateDay}
-                onChange={(e) => setDateDay(Number(e.target.value))}
-                className="h-8 w-16 rounded-md border border-input bg-background text-foreground px-1 text-sm text-center cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
-              >
-                {Array.from({ length: daysInMonth(dateYear, dateMonth) }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d} className="bg-background text-foreground">{String(d).padStart(2, "0")}</option>
-                ))}
+            <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Fecha</label>
+            <div className="flex gap-1.5">
+              <select value={dateDay} onChange={(e) => setDateDay(Number(e.target.value))} className="h-7 w-14 rounded-md border border-input bg-background text-foreground px-1 text-xs text-center cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring">
+                {Array.from({ length: daysInMonth(dateYear, dateMonth) }, (_, i) => i + 1).map((d) => (<option key={d} value={d} className="bg-background text-foreground">{String(d).padStart(2, "0")}</option>))}
               </select>
-
-              <select
-                value={dateMonth}
-                onChange={(e) => {
-                  const newM = Number(e.target.value)
-                  const maxDay = daysInMonth(dateYear, newM)
-                  setDateMonth(newM)
-                  if (dateDay > maxDay) setDateDay(maxDay)
-                }}
-                className="h-8 flex-1 rounded-md border border-input bg-background text-foreground px-1 text-sm cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
-              >
-                {MONTHS_ES.map((name, i) => (
-                  <option key={i} value={i} className="bg-background text-foreground">{name}</option>
-                ))}
+              <select value={dateMonth} onChange={(e) => { const nM = Number(e.target.value); const mD = daysInMonth(dateYear, nM); setDateMonth(nM); if (dateDay > mD) setDateDay(mD) }} className="h-7 flex-1 rounded-md border border-input bg-background text-foreground px-1 text-xs cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring">
+                {MONTHS_ES.map((name, i) => (<option key={i} value={i} className="bg-background text-foreground">{name}</option>))}
               </select>
-
-              <select
-                value={dateYear}
-                onChange={(e) => {
-                  const newY = e.target.value
-                  const maxDay = daysInMonth(newY, dateMonth)
-                  setDateYear(newY)
-                  if (dateDay > maxDay) setDateDay(maxDay)
-                }}
-                className="h-8 w-20 rounded-md border border-input bg-background text-foreground px-1 text-sm text-center font-bold cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring tabular-nums"
-              >
-                {Array.from({ length: 10 }, (_, i) => String(Number(dateYear) - 5 + i)).map((y) => (
-                  <option key={y} value={y} className="bg-background text-foreground">{y}</option>
-                ))}
+              <select value={dateYear} onChange={(e) => { const nY = e.target.value; const mD = daysInMonth(nY, dateMonth); setDateYear(nY); if (dateDay > mD) setDateDay(mD) }} className="h-7 w-16 rounded-md border border-input bg-background text-foreground px-1 text-xs text-center font-bold cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring tabular-nums">
+                {Array.from({ length: 10 }, (_, i) => String(Number(dateYear) - 5 + i)).map((y) => (<option key={y} value={y} className="bg-background text-foreground">{y}</option>))}
               </select>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" size="sm" disabled={saving}>
-              {saving ? "Guardando..." : "Guardar"}
-            </Button>
+          <div className="flex justify-end gap-1.5 pt-1">
+            <Button type="button" variant="outline" size="xs" onClick={onClose}>Cancelar</Button>
+            <Button type="submit" size="xs" disabled={saving}>{saving ? "Guardando..." : "Guardar"}</Button>
           </div>
         </form>
       </div>
