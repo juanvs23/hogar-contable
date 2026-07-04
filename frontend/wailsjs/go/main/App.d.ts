@@ -28,7 +28,7 @@ export function DeleteSavingMovement(arg1:number):Promise<void>;
 
 export function DeleteTransaction(arg1:number):Promise<void>;
 
-export function DepositToAccount(arg1:number,arg2:number,arg3:number,arg4:number,arg5:string):Promise<number>;
+export function DepositToAccount(arg1:number,arg2:number,arg3:number,arg4:number,arg5:string,arg6:string):Promise<number>;
 
 export function ExportReportToExcel(arg1:string,arg2:string):Promise<string>;
 
@@ -70,8 +70,8 @@ export function UpdateCategory(arg1:number,arg2:string,arg3:string):Promise<void
 
 export function UpdateSavingAccount(arg1:number,arg2:string,arg3:string):Promise<void>;
 
-export function UpdateSavingMovement(arg1:number,arg2:number,arg3:number,arg4:number,arg5:string):Promise<void>;
+export function UpdateSavingMovement(arg1:number,arg2:number,arg3:number,arg4:number,arg5:string,arg6:string):Promise<void>;
 
 export function UpdateTransaction(arg1:number,arg2:string,arg3:string,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number,arg9:any,arg10:string):Promise<void>;
 
-export function WithdrawFromAccount(arg1:number,arg2:number,arg3:number,arg4:number,arg5:string,arg6:boolean,arg7:any):Promise<number>;
+export function WithdrawFromAccount(arg1:number,arg2:number,arg3:number,arg4:number,arg5:string,arg6:string,arg7:boolean,arg8:any):Promise<number>;

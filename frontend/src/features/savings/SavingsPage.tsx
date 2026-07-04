@@ -44,6 +44,7 @@ export default function SavingsPage() {
   const [movAccId, setMovAccId] = useState<number | null>(null)
   const [movType, setMovType] = useState<"deposit" | "withdraw">("deposit")
   const [movUsdtStr, setMovUsdtStr] = useState("")
+  const [movDate, setMovDate] = useState(new Date().toISOString().split('T')[0])
   const [movDesc, setMovDesc] = useState("")
   const [movAsIncome, setMovAsIncome] = useState(false)
   const [movIncomeCat, setMovIncomeCat] = useState<number | null>(null)
@@ -52,6 +53,7 @@ export default function SavingsPage() {
   // Edit movement
   const [editMov, setEditMov] = useState<Movement | null>(null)
   const [editMovUsdtStr, setEditMovUsdtStr] = useState("")
+  const [editMovDate, setEditMovDate] = useState("")
   const [editMovDesc, setEditMovDesc] = useState("")
   const [savingMov, setSavingMov] = useState(false)
 
@@ -109,11 +111,11 @@ export default function SavingsPage() {
     setProcessingMov(true)
     try {
       if (movType === "deposit") {
-        await DepositToAccount(movAccId, movUsd, movUsdt, movBs, movDesc)
+        await DepositToAccount(movAccId, movUsd, movUsdt, movBs, movDesc, movDate)
       } else {
-        await WithdrawFromAccount(movAccId, movUsd, movUsdt, movBs, movDesc, movAsIncome, movAsIncome ? movIncomeCat : null)
+        await WithdrawFromAccount(movAccId, movUsd, movUsdt, movBs, movDesc, movDate, movAsIncome, movAsIncome ? movIncomeCat : null)
       }
-      setMovUsdtStr(""); setMovDesc(""); setMovAccId(null); setMovAsIncome(false)
+      setMovUsdtStr(""); setMovDate(new Date().toISOString().split('T')[0]); setMovDesc(""); setMovAccId(null); setMovAsIncome(false)
       await fetchAll()
       if (expandedId) loadMovements(expandedId)
     } catch (err) { console.error(err) }
@@ -245,7 +247,8 @@ export default function SavingsPage() {
                           <div key={m.id} className="group flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
                             <div className="flex items-center gap-2 min-w-0 flex-1">
                               <span className={cn("inline-block w-1.5 h-1.5 rounded-full shrink-0", m.type === "deposit" ? "bg-chart-2" : "bg-destructive")} />
-                              <span className="truncate max-w-[120px]" dangerouslySetInnerHTML={{ __html: m.description || (m.type === "deposit" ? "Depósito" : "Retiro") }} />
+                              <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{m.date}</span>
+                              <span className="truncate max-w-[100px]" dangerouslySetInnerHTML={{ __html: m.description || (m.type === "deposit" ? "Depósito" : "Retiro") }} />
                               {m.created_transaction_id && <span className="text-[10px] text-chart-2 font-medium shrink-0">→ USDT</span>}
                             </div>
                             <div className="text-right text-[11px] leading-tight shrink-0 ml-1.5">
@@ -258,7 +261,7 @@ export default function SavingsPage() {
                               <span className="tabular-nums text-muted-foreground">{formatBs(m.amount_bs)}</span>
                             </div>
                             <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon-xs" onClick={async (e) => { e.stopPropagation(); setEditMov(m); setEditMovUsdtStr(String(m.amount_usdt)); setEditMovDesc(m.description) }}><Pencil className="size-2.5" /></Button>
+                              <Button variant="ghost" size="icon-xs" onClick={async (e) => { e.stopPropagation(); setEditMov(m); setEditMovUsdtStr(String(m.amount_usdt)); setEditMovDate(m.date || new Date().toISOString().split('T')[0]); setEditMovDesc(m.description) }}><Pencil className="size-2.5" /></Button>
                               <Button variant="ghost" size="icon-xs" className="text-destructive" onClick={async (e) => { e.stopPropagation(); const plainDesc = (m.description || '').replace(/<[^>]*>/g, ''); if (window.confirm(`¿Eliminar "${plainDesc || (m.type === 'deposit' ? 'depósito' : 'retiro')}"?`)) { await DeleteSavingMovement(m.id); loadMovements(ab.account.id); await fetchAll() } }}><Trash2 className="size-2.5" /></Button>
                             </div>
                           </div>
@@ -282,6 +285,22 @@ export default function SavingsPage() {
               <Button variant="ghost" size="icon-xs" onClick={() => setMovAccId(null)}><X className="size-3.5" /></Button>
             </div>
             <div className="p-4 space-y-3">
+              {/* Date */}
+              <div>
+                <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Fecha</label>
+                <div className="flex gap-1.5">
+                  <select value={movDate.split('-')[2] || String(new Date().getDate()).padStart(2,'0')} onChange={e => { const p = movDate.split('-'); setMovDate(`${p[0]}-${p[1]}-${e.target.value}`) }} className="h-8 w-16 rounded-md border border-input bg-background text-foreground px-1 text-xs text-center cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring">
+                    {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')).map(d => <option key={d} value={d} className="bg-background text-foreground">{d}</option>)}
+                  </select>
+                  <select value={movDate.split('-')[1] || String(new Date().getMonth() + 1).padStart(2,'0')} onChange={e => { const p = movDate.split('-'); setMovDate(`${p[0]}-${e.target.value}-${p[2]}`) }} className="h-8 flex-1 rounded-md border border-input bg-background text-foreground px-1 text-xs cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring">
+                    {["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((m, i) => <option key={m} value={String(i+1).padStart(2,'0')} className="bg-background text-foreground">{m}</option>)}
+                  </select>
+                  <select value={movDate.split('-')[0] || String(new Date().getFullYear())} onChange={e => { const p = movDate.split('-'); setMovDate(`${e.target.value}-${p[1]}-${p[2]}`) }} className="h-8 w-20 rounded-md border border-input bg-background text-foreground px-1 text-xs text-center font-bold cursor-pointer outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring tabular-nums">
+                    {Array.from({ length: 10 }, (_, i) => String(new Date().getFullYear() - 5 + i)).map(y => <option key={y} value={y} className="bg-background text-foreground">{y}</option>)}
+                  </select>
+                </div>
+              </div>
+
               {/* USDT amount */}
               <div>
                 <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Monto en USDT</label>
@@ -339,6 +358,10 @@ export default function SavingsPage() {
             </div>
             <div className="p-4 space-y-3">
               <div>
+                <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Fecha</label>
+                <input type="date" value={editMovDate} onChange={e => setEditMovDate(e.target.value)} className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
+              </div>
+              <div>
                 <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Monto USDT</label>
                 <input type="number" step="0.01" min="0" value={editMovUsdtStr} onChange={e => setEditMovUsdtStr(e.target.value)} placeholder="0.00" className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
               </div>
@@ -360,7 +383,7 @@ export default function SavingsPage() {
                     const eUsdt = parseFloat(editMovUsdtStr) || 0
                     const eUsd = hasR && eUsdt > 0 ? round2(eUsdt * rp / ro) : 0
                     const eBs = hasR && eUsdt > 0 ? round2(eUsdt * rp) : 0
-                    await UpdateSavingMovement(editMov.id, eUsd, eUsdt, eBs, editMovDesc)
+                    await UpdateSavingMovement(editMov.id, eUsd, eUsdt, eBs, editMovDesc, editMovDate)
                     setEditMov(null)
                     if (expandedId) loadMovements(expandedId)
                     await fetchAll()

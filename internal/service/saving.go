@@ -39,10 +39,11 @@ func (s *SavingService) DeleteAccount(id int64) error {
 
 type DepositInput struct {
 	AccountID   int64   `json:"account_id"`
-	AmountUsd   float64 `json:"amount_usd"`  // USD BCV
-	AmountUsdt  float64 `json:"amount_usdt"` // USDT
+	AmountUsd   float64 `json:"amount_usd"`
+	AmountUsdt  float64 `json:"amount_usdt"`
 	AmountBs    float64 `json:"amount_bs"`
 	Description string  `json:"description"`
+	Date        string  `json:"date"` // YYYY-MM-DD
 }
 
 func (s *SavingService) Deposit(in DepositInput) (int64, error) {
@@ -53,16 +54,18 @@ func (s *SavingService) Deposit(in DepositInput) (int64, error) {
 		AmountUsdt:  in.AmountUsdt,
 		AmountBs:    in.AmountBs,
 		Description: in.Description,
+		Date:        in.Date,
 	}
 	return s.movRepo.Create(mov)
 }
 
 type WithdrawInput struct {
 	AccountID      int64   `json:"account_id"`
-	AmountUsd      float64 `json:"amount_usd"`  // USD BCV
-	AmountUsdt     float64 `json:"amount_usdt"` // USDT
+	AmountUsd      float64 `json:"amount_usd"`
+	AmountUsdt     float64 `json:"amount_usdt"`
 	AmountBs       float64 `json:"amount_bs"`
 	Description    string  `json:"description"`
+	Date           string  `json:"date"` // YYYY-MM-DD
 	CreateIncome   bool    `json:"create_income"`
 	IncomeCategory *int64  `json:"income_category"`
 }
@@ -83,6 +86,7 @@ func (s *SavingService) Withdraw(in WithdrawInput) (int64, error) {
 		AmountUsdt:  in.AmountUsdt,
 		AmountBs:    in.AmountBs,
 		Description: in.Description,
+		Date:        in.Date,
 	}
 
 	if in.CreateIncome {
@@ -109,8 +113,8 @@ func (s *SavingService) ListMovements(accountID int64) ([]core.SavingMovement, e
 	return s.movRepo.ListByAccount(accountID)
 }
 
-func (s *SavingService) UpdateMovement(id int64, amountUsd, amountUsdt, amountBs float64, description string) error {
-	return s.movRepo.Update(&core.SavingMovement{ID: id, AmountUsd: amountUsd, AmountUsdt: amountUsdt, AmountBs: amountBs, Description: description})
+func (s *SavingService) UpdateMovement(id int64, amountUsd, amountUsdt, amountBs float64, description, date string) error {
+	return s.movRepo.Update(&core.SavingMovement{ID: id, AmountUsd: amountUsd, AmountUsdt: amountUsdt, AmountBs: amountBs, Description: description, Date: date})
 }
 
 func (s *SavingService) DeleteMovement(id int64) error {

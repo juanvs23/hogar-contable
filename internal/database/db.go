@@ -111,6 +111,7 @@ func (db *DB) migrate() error {
 			amount_usdt REAL NOT NULL DEFAULT 0,
 			amount_bs REAL NOT NULL DEFAULT 0,
 			description TEXT NOT NULL DEFAULT '',
+			date TEXT NOT NULL DEFAULT (date('now','localtime')),
 			created_transaction_id INTEGER,
 			created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
 			FOREIGN KEY (account_id) REFERENCES saving_accounts(id),
@@ -119,6 +120,7 @@ func (db *DB) migrate() error {
 
 		// Migrate existing tables: add new columns safely
 		`ALTER TABLE saving_movements ADD COLUMN amount_usdt REAL NOT NULL DEFAULT 0`,
+		`ALTER TABLE saving_movements ADD COLUMN date TEXT NOT NULL DEFAULT (date('now','localtime'))`,
 		`ALTER TABLE transactions ADD COLUMN amount_usd_bcv REAL NOT NULL DEFAULT 0`,
 		`ALTER TABLE transactions ADD COLUMN amount_usdt REAL NOT NULL DEFAULT 0`,
 		`ALTER TABLE transactions ADD COLUMN rate_official REAL NOT NULL DEFAULT 0`,

@@ -101,6 +101,7 @@ export namespace core {
 	    amount_usdt: number;
 	    amount_bs: number;
 	    description: string;
+	    date: string;
 	    created_transaction_id?: number;
 	    created_at: string;
 	
@@ -117,6 +118,7 @@ export namespace core {
 	        this.amount_usdt = source["amount_usdt"];
 	        this.amount_bs = source["amount_bs"];
 	        this.description = source["description"];
+	        this.date = source["date"];
 	        this.created_transaction_id = source["created_transaction_id"];
 	        this.created_at = source["created_at"];
 	    }

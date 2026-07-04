@@ -15,6 +15,7 @@ type SavingMovement struct {
 	AmountUsdt           float64 `json:"amount_usdt"` // USDT
 	AmountBs             float64 `json:"amount_bs"`
 	Description          string  `json:"description"`
+	Date                 string  `json:"date"` // YYYY-MM-DD
 	CreatedTransactionID *int64  `json:"created_transaction_id,omitempty"`
 	CreatedAt            string  `json:"created_at"`
 }

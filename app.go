@@ -209,16 +209,16 @@ func (a *App) DeleteSavingAccount(id int64) error {
 }
 
 // Movements
-func (a *App) DepositToAccount(accountID int64, amountUsd, amountUsdt, amountBs float64, description string) (int64, error) {
+func (a *App) DepositToAccount(accountID int64, amountUsd, amountUsdt, amountBs float64, description, date string) (int64, error) {
 	return a.savingSvc.Deposit(service.DepositInput{
-		AccountID: accountID, AmountUsd: amountUsd, AmountUsdt: amountUsdt, AmountBs: amountBs, Description: description,
+		AccountID: accountID, AmountUsd: amountUsd, AmountUsdt: amountUsdt, AmountBs: amountBs, Description: description, Date: date,
 	})
 }
 
-func (a *App) WithdrawFromAccount(accountID int64, amountUsd, amountUsdt, amountBs float64, description string, createIncome bool, incomeCategory *int64) (int64, error) {
+func (a *App) WithdrawFromAccount(accountID int64, amountUsd, amountUsdt, amountBs float64, description, date string, createIncome bool, incomeCategory *int64) (int64, error) {
 	return a.savingSvc.Withdraw(service.WithdrawInput{
 		AccountID: accountID, AmountUsd: amountUsd, AmountUsdt: amountUsdt, AmountBs: amountBs,
-		Description: description, CreateIncome: createIncome, IncomeCategory: incomeCategory,
+		Description: description, Date: date, CreateIncome: createIncome, IncomeCategory: incomeCategory,
 	})
 }
 
@@ -226,8 +226,8 @@ func (a *App) ListAccountMovements(accountID int64) ([]core.SavingMovement, erro
 	return a.savingSvc.ListMovements(accountID)
 }
 
-func (a *App) UpdateSavingMovement(id int64, amountUsd, amountUsdt, amountBs float64, description string) error {
-	return a.savingSvc.UpdateMovement(id, amountUsd, amountUsdt, amountBs, description)
+func (a *App) UpdateSavingMovement(id int64, amountUsd, amountUsdt, amountBs float64, description, date string) error {
+	return a.savingSvc.UpdateMovement(id, amountUsd, amountUsdt, amountBs, description, date)
 }
 
 func (a *App) DeleteSavingMovement(id int64) error {
