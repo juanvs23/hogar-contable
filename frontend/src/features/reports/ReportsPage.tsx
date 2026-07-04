@@ -4,7 +4,7 @@ import {
 } from "recharts"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Lock, Unlock, TrendingUp, TrendingDown, Award, FileDown, Database } from "lucide-react"
+import { Lock, Unlock, TrendingUp, TrendingDown, Award, FileDown, Database, PiggyBank } from "lucide-react"
 import {
   GetMonthlySummary,
   GetYearlySummary,
@@ -14,6 +14,7 @@ import {
   IsMonthClosed,
   ExportReportToExcel,
   BackupDatabase,
+  ListSavingAccounts,
 } from "../../../wailsjs/go/main/App"
 import { service, core } from "../../../wailsjs/go/models"
 
@@ -69,6 +70,7 @@ export default function ReportsPage() {
   const [incomeCats, setIncomeCats] = useState<core.CategoryTotal[]>([])
   const [closed, setClosed] = useState(false)
   const [closing, setClosing] = useState(false)
+  const [savingsTotal, setSavingsTotal] = useState<number>(0)
 
   // Comparison mode
   const [compareMode, setCompareMode] = useState(false)
@@ -118,6 +120,10 @@ export default function ReportsPage() {
     GetIncomeByCategory(selYear, mStr).then((r) => setIncomeCats(r ?? [])).catch(console.error)
     GetYearlySummary(selYear).then(setYearlySummary).catch(console.error)
     IsMonthClosed(selYear, mStr).then(setClosed).catch(console.error)
+    ListSavingAccounts().then(r => {
+      const total = (r ?? []).reduce((s: number, a: any) => s + (a.balance_usdt || 0), 0)
+      setSavingsTotal(total)
+    }).catch(console.error)
   }, [selYear, selMonth])
 
   const handleCloseMonth = async () => {
@@ -193,7 +199,7 @@ export default function ReportsPage() {
 
       {/* Summary cards */}
       {summary && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-lg border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <TrendingUp className="size-3.5 text-chart-2" /> Ingresos
@@ -214,6 +220,13 @@ export default function ReportsPage() {
               {formatUsd(summary.balance_usd)}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">{formatBs(summary.balance_bs)}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <PiggyBank className="size-3.5 text-primary" /> Ahorros
+            </p>
+            <p className="text-xl font-bold text-primary">{formatUsd(savingsTotal)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">USDT</p>
           </div>
         </div>
       )}
