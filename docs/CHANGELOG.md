@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.0] - 2026-07-04
+
+### Added
+- Editor WYSIWYG (react-quill) para descripciones en transacciones y ahorros
+- Toolbar completa: negrita, cursiva, subrayado, tachado, color, listas, checklist, alineación, citas, código, enlace
+- IDs fijos para categorías default (1-17) para mantener referencias estables
+
+### Fixed
+- Categorías no se guardaban en transacciones por IDs cambiantes en cada reinicio
+- Ventana Windows sin bordes ni botones de min/max/cerrar (native_webview2loader)
+- Ventana Windows sin posibilidad de arrastrar (Frameless: false)
+- Duplicación de React que rompía react-quill
+
+### Changed
+- Tamaño de ventana reducido a 1000x700 (min 800x500)
+- Descripciones renderizadas como HTML en listas
+- Espacios reducidos al mínimo en modal de transacción
+
 ## [1.0.0] - 2026-06-25
 
 ### Added
