@@ -24,6 +24,7 @@ type Movement = core.SavingMovement
 
 function formatUsd(v: number) { return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(v) }
 function formatBs(v: number) { return new Intl.NumberFormat("es-VE", { style: "currency", currency: "VES", minimumFractionDigits: 2 }).format(v) }
+const round2 = (v: number) => Math.round(v * 100) / 100
 
 export default function SavingsPage() {
   const [accounts, setAccounts] = useState<AccountBalance[]>([])
@@ -54,7 +55,12 @@ export default function SavingsPage() {
   const [editMovUsd, setEditMovUsd] = useState("")
   const [editMovUsdt, setEditMovUsdt] = useState("")
   const [editMovDesc, setEditMovDesc] = useState("")
+  const [editMovSrc, setEditMovSrc] = useState<"usd" | "usdt">("usd") // last edited field
   const [savingMov, setSavingMov] = useState(false)
+  // Auto-calculated values for edit
+  const editParsedUsd = parseFloat(editMovUsd) || 0
+  const editParsedUsdt = parseFloat(editMovUsdt) || 0
+  const editDisplayBs = rates?.official ? round2(editParsedUsd * rates.official) : 0
 
   // Edit account
   const [editId, setEditId] = useState<number | null>(null)
@@ -97,8 +103,6 @@ export default function SavingsPage() {
     } catch (err) { console.error(err) }
     finally { setCreating(false) }
   }
-
-  const round2 = (v: number) => Math.round(v * 100) / 100
 
   // Calculate amounts based on selected currency
   const movInput = parseFloat(movAmount) || 0
@@ -356,13 +360,18 @@ export default function SavingsPage() {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="text-xs font-medium mb-0.5 block text-muted-foreground">USD BCV</label>
-                  <input type="number" step="0.01" value={editMovUsd} onChange={e => setEditMovUsd(e.target.value)} className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
+                  <input type="number" step="0.01" value={editMovUsd} onChange={e => setEditMovUsd(e.target.value)} onFocus={() => setEditMovSrc("usd")} onBlur={() => { if (editMovSrc === "usdt" && hasR) { const v = parseFloat(editMovUsdt) || 0; setEditMovUsd(round2(v * ro / rp).toString()) } }} className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
                 </div>
                 <div className="flex-1">
                   <label className="text-xs font-medium mb-0.5 block text-muted-foreground">USDT</label>
-                  <input type="number" step="0.01" value={editMovUsdt} onChange={e => setEditMovUsdt(e.target.value)} className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
+                  <input type="number" step="0.01" value={editMovUsdt} onChange={e => setEditMovUsdt(e.target.value)} onFocus={() => setEditMovSrc("usdt")} onBlur={() => { if (editMovSrc === "usd" && hasR) { const v = parseFloat(editMovUsd) || 0; setEditMovUsdt(round2(v * ro / rp).toString()) } }} className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
                 </div>
               </div>
+              {editParsedUsd > 0 && hasR && (
+                <div className="text-[11px] text-muted-foreground text-right">
+                  ≈ Bs {formatBs(editDisplayBs)}
+                </div>
+              )}
               <div>
                 <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Descripción</label>
                 <WysiwygEditor value={editMovDesc} onChange={setEditMovDesc} minHeight={50} />
