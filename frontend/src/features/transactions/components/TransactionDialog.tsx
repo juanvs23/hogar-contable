@@ -304,7 +304,7 @@ export default function TransactionDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ej: Sueldo de junio"
-              rows={2}
+              rows={3}
               className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring resize-none"
             />
             {errors.description && (

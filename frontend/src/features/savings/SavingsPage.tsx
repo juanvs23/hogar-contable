@@ -197,15 +197,14 @@ export default function SavingsPage() {
         <div className="rounded-lg border border-border bg-card p-4">
           <h3 className="text-sm font-semibold mb-3">Nuevo ahorro</h3>
           <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[180px]">
+            <div className="flex-1 min-w-[200px]">
               <label className="text-xs font-medium mb-1 block text-muted-foreground">Descripción</label>
-              <input
-                type="text"
+              <textarea
                 value={newDesc}
                 onChange={(e) => setNewDesc(e.target.value)}
                 placeholder="Ej: Fondo de emergencia"
-                className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
-                onKeyDown={(e) => e.key === "Enter" && !creating && handleCreate()}
+                rows={2}
+                className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring resize-none"
               />
             </div>
             <div className="w-32">
@@ -269,17 +268,13 @@ export default function SavingsPage() {
               >
                 {editingId === s.id ? (
                   /* Edit mode */
-                  <div className="flex items-center gap-3 w-full">
-                    <input
-                      type="text"
+                  <div className="flex items-start gap-3 w-full">
+                    <textarea
                       value={editDesc}
                       onChange={(e) => setEditDesc(e.target.value)}
-                      className="h-7 flex-1 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
+                      rows={2}
+                      className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring resize-none"
                       autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleUpdate(s.id)
-                        if (e.key === "Escape") cancelEdit()
-                      }}
                     />
                     <div className="w-28">
                       <input
