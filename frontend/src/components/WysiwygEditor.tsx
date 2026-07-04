@@ -1,4 +1,3 @@
-import { useMemo } from "react"
 import ReactQuill from "react-quill"
 import "react-quill/dist/quill.snow.css"
 
@@ -11,13 +10,28 @@ interface WysiwygEditorProps {
 
 const modules = {
   toolbar: [
-    ["bold", "italic", "underline"],
-    [{ list: "ordered" }, { list: "bullet" }],
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ color: [] }, { background: [] }],
+    [{ list: "ordered" }, { list: "bullet" }, { list: "check" }],
+    [{ indent: "-1" }, { indent: "+1" }],
+    [{ align: [] }],
+    ["blockquote", "code-block"],
+    ["link"],
     ["clean"],
   ],
 }
 
-const formats = ["bold", "italic", "underline", "list", "bullet"]
+const formats = [
+  "header",
+  "bold", "italic", "underline", "strike",
+  "color", "background",
+  "list", "bullet", "check",
+  "indent",
+  "align",
+  "blockquote", "code-block",
+  "link",
+]
 
 export default function WysiwygEditor({
   value,

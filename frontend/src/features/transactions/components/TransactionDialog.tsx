@@ -301,6 +301,7 @@ export default function TransactionDialog({
               Descripción
             </label>
             <WysiwygEditor
+              key={`desc-${open}`}
               value={description}
               onChange={setDescription}
               placeholder="Ej: Sueldo de junio"
