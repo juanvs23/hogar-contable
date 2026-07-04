@@ -43,8 +43,7 @@ export default function SavingsPage() {
   // Deposit/Withdraw dialog
   const [movAccId, setMovAccId] = useState<number | null>(null)
   const [movType, setMovType] = useState<"deposit" | "withdraw">("deposit")
-  const [movCurrency, setMovCurrency] = useState<"usd_bcv" | "usdt" | "bs">("usd_bcv")
-  const [movAmount, setMovAmount] = useState("")
+  const [movUsdtStr, setMovUsdtStr] = useState("")
   const [movDesc, setMovDesc] = useState("")
   const [movAsIncome, setMovAsIncome] = useState(false)
   const [movIncomeCat, setMovIncomeCat] = useState<number | null>(null)
@@ -52,15 +51,9 @@ export default function SavingsPage() {
 
   // Edit movement
   const [editMov, setEditMov] = useState<Movement | null>(null)
-  const [editMovUsd, setEditMovUsd] = useState("")
-  const [editMovUsdt, setEditMovUsdt] = useState("")
+  const [editMovUsdtStr, setEditMovUsdtStr] = useState("")
   const [editMovDesc, setEditMovDesc] = useState("")
-  const [editMovSrc, setEditMovSrc] = useState<"usd" | "usdt">("usd") // last edited field
   const [savingMov, setSavingMov] = useState(false)
-  // Auto-calculated values for edit
-  const editParsedUsd = parseFloat(editMovUsd) || 0
-  const editParsedUsdt = parseFloat(editMovUsdt) || 0
-  const editDisplayBs = rates?.official ? round2(editParsedUsd * rates.official) : 0
 
   // Edit account
   const [editId, setEditId] = useState<number | null>(null)
@@ -104,28 +97,23 @@ export default function SavingsPage() {
     finally { setCreating(false) }
   }
 
-  // Calculate amounts based on selected currency
-  const movInput = parseFloat(movAmount) || 0
   const ro = rates?.official ?? 0
   const rp = rates?.p2p ?? 0
   const hasR = ro > 0 && rp > 0
-  const calc = (() => {
-    if (!hasR || !movInput) return { usd: 0, usdt: 0, bs: 0 }
-    if (movCurrency === "usd_bcv") return { usd: movInput, usdt: round2(movInput * ro / rp), bs: round2(movInput * ro) }
-    if (movCurrency === "usdt") return { usd: round2(movInput * rp / ro), usdt: movInput, bs: round2(movInput * rp) }
-    return { usd: round2(movInput / ro), usdt: round2(movInput / rp), bs: movInput }
-  })()
+  const movUsdt = parseFloat(movUsdtStr) || 0
+  const movUsd = hasR && movUsdt > 0 ? round2(movUsdt * rp / ro) : 0
+  const movBs = hasR && movUsdt > 0 ? round2(movUsdt * rp) : 0
 
   const handleMovement = async () => {
-    if (!movAccId || !movInput) return
+    if (!movAccId || !movUsdt) return
     setProcessingMov(true)
     try {
       if (movType === "deposit") {
-        await DepositToAccount(movAccId, calc.usd, calc.usdt, calc.bs, movDesc)
+        await DepositToAccount(movAccId, movUsd, movUsdt, movBs, movDesc)
       } else {
-        await WithdrawFromAccount(movAccId, calc.usd, calc.usdt, calc.bs, movDesc, movAsIncome, movAsIncome ? movIncomeCat : null)
+        await WithdrawFromAccount(movAccId, movUsd, movUsdt, movBs, movDesc, movAsIncome, movAsIncome ? movIncomeCat : null)
       }
-      setMovAmount(""); setMovDesc(""); setMovAccId(null); setMovAsIncome(false)
+      setMovUsdtStr(""); setMovDesc(""); setMovAccId(null); setMovAsIncome(false)
       await fetchAll()
       if (expandedId) loadMovements(expandedId)
     } catch (err) { console.error(err) }
@@ -269,7 +257,7 @@ export default function SavingsPage() {
                               <span className="tabular-nums text-muted-foreground">{formatBs(m.amount_bs)}</span>
                             </div>
                             <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon-xs" onClick={async (e) => { e.stopPropagation(); setEditMov(m); setEditMovUsd(String(m.amount_usd)); setEditMovDesc(m.description) }}><Pencil className="size-2.5" /></Button>
+                              <Button variant="ghost" size="icon-xs" onClick={async (e) => { e.stopPropagation(); setEditMov(m); setEditMovUsdtStr(String(m.amount_usdt)); setEditMovDesc(m.description) }}><Pencil className="size-2.5" /></Button>
                               <Button variant="ghost" size="icon-xs" className="text-destructive" onClick={async (e) => { e.stopPropagation(); const plainDesc = (m.description || '').replace(/<[^>]*>/g, ''); if (window.confirm(`¿Eliminar "${plainDesc || (m.type === 'deposit' ? 'depósito' : 'retiro')}"?`)) { await DeleteSavingMovement(m.id); loadMovements(ab.account.id); await fetchAll() } }}><Trash2 className="size-2.5" /></Button>
                             </div>
                           </div>
@@ -293,25 +281,17 @@ export default function SavingsPage() {
               <Button variant="ghost" size="icon-xs" onClick={() => setMovAccId(null)}><X className="size-3.5" /></Button>
             </div>
             <div className="p-4 space-y-3">
-              {/* Currency selector + amount */}
+              {/* USDT amount */}
               <div>
-                <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Monto</label>
-                <div className="flex gap-1.5">
-                  <input type="number" step="0.01" min="0" value={movAmount} onChange={e => setMovAmount(e.target.value)} placeholder="0.00" className="h-8 flex-1 rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
-                  <div className="flex gap-1">
-                    {(["usd_bcv", "usdt", "bs"] as const).map(c => (
-                      <Button key={c} type="button" variant={movCurrency === c ? "default" : "secondary"} size="xs" onClick={() => setMovCurrency(c)} className="min-w-[48px]">{c === "usd_bcv" ? "USD" : c === "usdt" ? "USDT" : "Bs"}</Button>
-                    ))}
-                  </div>
-                </div>
+                <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Monto en USDT</label>
+                <input type="number" step="0.01" min="0" value={movUsdtStr} onChange={e => setMovUsdtStr(e.target.value)} placeholder="0.00" className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
               </div>
 
               {/* Auto-converted amounts */}
-              {movInput > 0 && hasR && (
+              {movUsdt > 0 && hasR && (
                 <div className="rounded border border-border bg-muted/50 p-2 space-y-0.5 text-xs">
-                  <div className="flex justify-between"><span className="text-muted-foreground">USD BCV</span><span className="font-medium tabular-nums">{formatUsd(calc.usd)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">USDT</span><span className="font-medium tabular-nums">{formatUsd(calc.usdt)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Bs</span><span className="font-medium tabular-nums">{formatBs(calc.bs)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">USD BCV</span><span className="font-medium tabular-nums">{formatUsd(movUsd)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Bs</span><span className="font-medium tabular-nums">{formatBs(movBs)}</span></div>
                 </div>
               )}
 
@@ -339,7 +319,7 @@ export default function SavingsPage() {
 
               <div className="flex justify-end gap-2 pt-1">
                 <Button variant="outline" size="xs" onClick={() => setMovAccId(null)}>Cancelar</Button>
-                <Button size="xs" variant={movType === "deposit" ? "default" : "destructive"} onClick={handleMovement} disabled={processingMov || !movInput}>
+                <Button size="xs" variant={movType === "deposit" ? "default" : "destructive"} onClick={handleMovement} disabled={processingMov || !movUsdt}>
                   {processingMov ? "Procesando..." : movType === "deposit" ? "Depositar" : "Retirar"}
                 </Button>
               </div>
@@ -357,19 +337,14 @@ export default function SavingsPage() {
               <Button variant="ghost" size="icon-xs" onClick={() => setEditMov(null)}><X className="size-3.5" /></Button>
             </div>
             <div className="p-4 space-y-3">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="text-xs font-medium mb-0.5 block text-muted-foreground">USD BCV</label>
-                  <input type="number" step="0.01" value={editMovUsd} onChange={e => setEditMovUsd(e.target.value)} onFocus={() => setEditMovSrc("usd")} onBlur={() => { if (editMovSrc === "usdt" && hasR) { const v = parseFloat(editMovUsdt) || 0; setEditMovUsd(round2(v * ro / rp).toString()) } }} className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs font-medium mb-0.5 block text-muted-foreground">USDT</label>
-                  <input type="number" step="0.01" value={editMovUsdt} onChange={e => setEditMovUsdt(e.target.value)} onFocus={() => setEditMovSrc("usdt")} onBlur={() => { if (editMovSrc === "usd" && hasR) { const v = parseFloat(editMovUsd) || 0; setEditMovUsdt(round2(v * ro / rp).toString()) } }} className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
-                </div>
+              <div>
+                <label className="text-xs font-medium mb-0.5 block text-muted-foreground">Monto USDT</label>
+                <input type="number" step="0.01" min="0" value={editMovUsdtStr} onChange={e => setEditMovUsdtStr(e.target.value)} placeholder="0.00" className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring" />
               </div>
-              {editParsedUsd > 0 && hasR && (
-                <div className="text-[11px] text-muted-foreground text-right">
-                  ≈ Bs {formatBs(editDisplayBs)}
+              {parseFloat(editMovUsdtStr) > 0 && hasR && (
+                <div className="rounded border border-border bg-muted/50 p-2 space-y-0.5 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground">USD BCV</span><span className="font-medium tabular-nums">{formatUsd(round2(parseFloat(editMovUsdtStr) * rp / ro))}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Bs</span><span className="font-medium tabular-nums">{formatBs(round2(parseFloat(editMovUsdtStr) * rp))}</span></div>
                 </div>
               )}
               <div>
@@ -381,9 +356,9 @@ export default function SavingsPage() {
                 <Button size="xs" onClick={async () => {
                   setSavingMov(true)
                   try {
-                    const eUsd = parseFloat(editMovUsd) || 0
-                    const eUsdt = parseFloat(editMovUsdt) || 0
-                    const eBs = rates?.official ? round2(eUsd * rates.official) : 0
+                    const eUsdt = parseFloat(editMovUsdtStr) || 0
+                    const eUsd = hasR && eUsdt > 0 ? round2(eUsdt * rp / ro) : 0
+                    const eBs = hasR && eUsdt > 0 ? round2(eUsdt * rp) : 0
                     await UpdateSavingMovement(editMov.id, eUsd, eUsdt, eBs, editMovDesc)
                     setEditMov(null)
                     if (expandedId) loadMovements(expandedId)
