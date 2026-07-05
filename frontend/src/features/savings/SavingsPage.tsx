@@ -118,7 +118,7 @@ export default function SavingsPage() {
       setMovUsdtStr(""); setMovDate(new Date().toISOString().split('T')[0]); setMovDesc(""); setMovAccId(null); setMovAsIncome(false)
       await fetchAll()
       if (expandedId) loadMovements(expandedId)
-    } catch (err) { console.error(err) }
+    } catch (err: any) { alert(err?.message || err || "Error al procesar"); console.error(err) }
     finally { setProcessingMov(false) }
   }
 
