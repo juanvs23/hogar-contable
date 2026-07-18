@@ -438,6 +438,12 @@ func (a *App) GetLastExchangeRates() (*ExchangeRateResult, error) {
 	return &ExchangeRateResult{Official: official, P2P: p2p}, nil
 }
 
+// SetManualExchangeRates guarda tasas ingresadas manualmente (cuando la API no responde).
+func (a *App) SetManualExchangeRates(official, p2p float64) error {
+	a.exchangeSvc.SaveManualRates(official, p2p)
+	return nil
+}
+
 func (a *App) ConvertBsToUsd(amountBs, rate float64) float64 {
 	return service.ConvertBsToUsd(amountBs, rate)
 }

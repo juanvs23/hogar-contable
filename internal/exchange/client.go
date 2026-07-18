@@ -71,9 +71,15 @@ func (c *Client) fetchRate(url string) (float64, error) {
 		return 0, fmt.Errorf("parse response: %w", err)
 	}
 
-	if rate.Promedio <= 0 {
-		return 0, fmt.Errorf("invalid rate value: %f", rate.Promedio)
+	if rate.Promedio > 0 {
+		return rate.Promedio, nil
 	}
 
-	return rate.Promedio, nil
+	// Fallback: calcular promedio desde compra y venta si están disponibles
+	if rate.Compra != nil && rate.Venta != nil && *rate.Compra > 0 && *rate.Venta > 0 {
+		prom := (*rate.Compra + *rate.Venta) / 2
+		return prom, nil
+	}
+
+	return 0, fmt.Errorf("invalid rate value: no promedio, compra or venta")
 }

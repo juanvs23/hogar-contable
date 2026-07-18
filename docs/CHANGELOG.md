@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0] - 2026-07-18
+
+### Added
+- Modal para ingresar tasas manualmente cuando la API de dolarapi.com no responde
+- Fallback promedio desde compra/venta si la API no devuelve promedio
+- Regla de proyecto: CHANGELOG obligatorio en cada cambio (docs/context.md)
+- Binding SetManualExchangeRates desde el frontend
+
+### Fixed
+- SQLITE_BUSY en escrituras concurrentes de tasas de cambio (sync.Mutex en GetCurrentRates)
+- Versión en sidebar mostraba v0.1 en vez de la versión real del proyecto
+
+### Changed
+- Vista de versión actualizada a v1.2.0 en el sidebar
+
 ## [1.1.0] - 2026-07-04
 
 ### Added

@@ -66,6 +66,8 @@ export function ListSavingAccounts():Promise<Array<core.AccountBalance>>;
 
 export function ListTransactions(arg1:string,arg2:string,arg3:string):Promise<Array<core.Transaction>>;
 
+export function SetManualExchangeRates(arg1:number,arg2:number):Promise<void>;
+
 export function UpdateCategory(arg1:number,arg2:string,arg3:string):Promise<void>;
 
 export function UpdateSavingAccount(arg1:number,arg2:string,arg3:string):Promise<void>;

@@ -126,6 +126,10 @@ export function ListTransactions(arg1, arg2, arg3) {
   return window['go']['main']['App']['ListTransactions'](arg1, arg2, arg3);
 }
 
+export function SetManualExchangeRates(arg1, arg2) {
+  return window['go']['main']['App']['SetManualExchangeRates'](arg1, arg2);
+}
+
 export function UpdateCategory(arg1, arg2, arg3) {
   return window['go']['main']['App']['UpdateCategory'](arg1, arg2, arg3);
 }

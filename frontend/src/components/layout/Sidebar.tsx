@@ -48,7 +48,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="p-3 border-t border-border">
-        <p className="text-xs text-muted-foreground">Hogar Contable v0.1</p>
+        <p className="text-xs text-muted-foreground">Hogar Contable v1.2.0</p>
       </div>
     </aside>
   )

@@ -31,7 +31,7 @@
 - Llamadas directas a Wails bindings (sin TanStack Query aún)
 - Comandos Wails/Go para operaciones de backend
 
-## Estado del proyecto (23/06/2026)
+## Estado del proyecto (18/07/2026)
 
 ### Completado — Backend
 - Modelos: Transaction (con amount_bs, amount_usd_bcv, amount_usdt, rate_official, rate_p2p), Category, Closure, ExchangeRate
@@ -58,6 +58,11 @@
 - Tests unitarios
 - Cross-compile a Windows (.exe)
 - NSIS installer
+
+## Reglas para la IA
+
+- **CHANGELOG obligatorio**: Toda modificación, cambio o fix en el código debe actualizar `docs/CHANGELOG.md` siguiendo el formato [Keep a Changelog](https://keepachangelog.com/) con secciones Added/Changed/Fixed/Removed y versionado semántico (MAJOR.MINOR.PATCH).
+- **Versión en vista**: Cada vez que se actualice el CHANGELOG, también debe actualizarse el número de versión en el footer del sidebar (`frontend/src/components/layout/Sidebar.tsx`) para que coincida.
 
 ## Decisiones registradas
 

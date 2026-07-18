@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"hogar-contable/internal/core"
 	"hogar-contable/internal/exchange"
@@ -12,6 +13,7 @@ import (
 type ExchangeService struct {
 	rateRepo   repository.ExchangeRateRepository
 	apiClient  *exchange.Client
+	mu         sync.Mutex
 }
 
 func NewExchangeService(rateRepo repository.ExchangeRateRepository, apiClient *exchange.Client) *ExchangeService {
@@ -20,7 +22,11 @@ func NewExchangeService(rateRepo repository.ExchangeRateRepository, apiClient *e
 
 // GetCurrentRates returns the latest rates, fetching from API if available.
 // Falls back to cached values if offline.
+// Calls are serialized — concurrent requests queue up to avoid SQLITE_BUSY.
 func (s *ExchangeService) GetCurrentRates() (official, p2p float64, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	official, p2p, apiErr := s.apiClient.FetchRates()
 	if apiErr == nil {
 		// Save fetched rates
@@ -59,6 +65,12 @@ func (s *ExchangeService) GetLatestFromDB() (official, p2p float64, err error) {
 		p2p = p2pRate.Value
 	}
 	return official, p2p, nil
+}
+
+// SaveManualRates persiste tasas ingresadas manualmente por el usuario.
+func (s *ExchangeService) SaveManualRates(official, p2p float64) {
+	s.saveRate(core.Official, official)
+	s.saveRate(core.P2P, p2p)
 }
 
 func (s *ExchangeService) saveRate(rateType core.RateType, value float64) {

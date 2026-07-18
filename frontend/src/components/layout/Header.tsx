@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { RefreshCw, Moon, Sun, CircleHelp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/hooks/useTheme"
 import HelpModal from "@/components/help/HelpModal"
+import RateModal from "./RateModal"
 import { GetCurrentExchangeRates } from "../../../wailsjs/go/main/App"
 
 interface ExchangeRates {
@@ -23,23 +24,24 @@ export default function Header() {
   const [rates, setRates] = useState<ExchangeRates | null>(null)
   const [loading, setLoading] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [rateModalOpen, setRateModalOpen] = useState(false)
   const { isDark, toggle } = useTheme()
 
-  const fetchRates = async () => {
+  const fetchRates = useCallback(async () => {
     setLoading(true)
     try {
       const result = await GetCurrentExchangeRates()
       setRates(result)
     } catch {
-      // Silently fail — rates will show as unavailable
+      setRateModalOpen(true)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchRates()
-  }, [])
+  }, [fetchRates])
 
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-6">
@@ -72,6 +74,11 @@ export default function Header() {
       </div>
 
       <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <RateModal
+        open={rateModalOpen}
+        onClose={() => setRateModalOpen(false)}
+        onSaved={(official, p2p) => setRates({ official, p2p })}
+      />
     </header>
   )
 }
