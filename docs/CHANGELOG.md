@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1] - 2026-09-27
+
+### Changed
+- Roadmap sincronizado con el estado real del proyecto: Fase 3 (Reportes) y Fase 4 (Export/Import) completadas, Fases 5-7 marcadas parcialmente según evidencia; pendientes reales consolidados en una sola lista
+- Contexto (docs/context.md) actualizado: exportación/importación ya no figuran como pendientes, estado del proyecto al día (27/09/2026)
+- Versión del sidebar actualizada a v1.2.1
+
 ## [1.2.0] - 2026-07-18
 
 ### Added

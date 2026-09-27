@@ -9,8 +9,8 @@
 - **Cierres contables**: Por día y por mes, para integridad de reportes
 - **Conversión Bs/USD**: Fetch a API externa (dólar oficial + USDT P2P) via dolarapi.com
 - **Offline**: Funciona sin internet excepto para tipo de cambio (mantiene último valor)
-- **Exportación**: Excel (pendiente)
-- **Importación**: CSV (pendiente)
+- **Exportación**: Excel (transacciones, reportes, ahorros) — desde la UI
+- **Importación**: CSV con validación — desde la UI
 - **Persistencia**: SQLite local en ~/.local/share/hogar-contable/
 - **Sin autenticación ni multiusuario**
 
@@ -31,14 +31,18 @@
 - Llamadas directas a Wails bindings (sin TanStack Query aún)
 - Comandos Wails/Go para operaciones de backend
 
-## Estado del proyecto (18/07/2026)
+## Estado del proyecto (27/09/2026)
 
 ### Completado — Backend
 - Modelos: Transaction (con amount_bs, amount_usd_bcv, amount_usdt, rate_official, rate_p2p), Category, Closure, ExchangeRate
 - SQLite con WAL, foreign keys, migrations automáticas
 - CRUD transacciones: crear, listar (por fecha/tipo), editar, eliminar
 - CRUD categorías: crear, editar, eliminar con 17 categorías default (se refrescan en cada inicio)
-- Fetch de tasas de cambio desde dolarapi.com con cache offline
+- Fetch de tasas de cambio desde dolarapi.com con cache offline, fallback promedio y modal de tasas manuales (v1.2.0)
+- Mutex anti-SQLITE_BUSY en escrituras concurrentes de tasas (v1.2.0)
+- CRUD de ahorros: cuentas y movimientos multi-moneda (USD BCV, USDT, Bs) con auto-conversión
+- Reportes: cierre diario/mensual, comparación entre meses y años
+- Exportar Excel, importar CSV, backup de DB
 - Clean Architecture: core → repository → service → App handlers
 
 ### Completado — Frontend
@@ -49,15 +53,19 @@
 - Modo oscuro: toggle manual + detección del sistema, persistido en localStorage
 - ErrorBoundary global para fallos de conexión con backend
 - Componente shadcn/ui Button con todas las variantes
+- Reportes con gráficos Recharts (datos reales) + modo comparación meses/años
+- Módulo Ahorros rediseñado: cuentas, movimientos editables/eliminables, HTML renderizado
+- Editor WYSIWYG (react-quill) en descripciones de transacciones y ahorros (v1.1.0)
+- Export Excel / Import CSV / Backup desde la UI
+- Ayuda contextual con screenshots por vista
 
 ### Pendiente
-- Reportes: cierre diario/mensual/anual, gráficos con datos reales
-- Exportación a Excel
-- Importación CSV
-- Backup de base de datos
-- Tests unitarios
-- Cross-compile a Windows (.exe)
-- NSIS installer
+- Secciones variables (personalizables)
+- GitHub Actions CI/CD
+- Testing E2E con Playwright
+- Ampliar cobertura de tests (actual: 12 Go + 4 componentes)
+- Exportar/Importar configuración (categorías personalizadas, preferencia de tema)
+- Video o GIF de uso básico (opcional)
 
 ## Reglas para la IA
 
