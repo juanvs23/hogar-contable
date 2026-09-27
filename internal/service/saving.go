@@ -71,12 +71,15 @@ type WithdrawInput struct {
 }
 
 func (s *SavingService) Withdraw(in WithdrawInput) (int64, error) {
-	usd, _, _, err := s.accRepo.GetBalance(in.AccountID)
+	// USDT is the savings base currency: validate against the USDT balance.
+	// The derived USD BCV figures mix rates from different moments and must
+	// not gate withdrawals.
+	_, usdt, _, err := s.accRepo.GetBalance(in.AccountID)
 	if err != nil {
 		return 0, fmt.Errorf("check balance: %w", err)
 	}
-	if usd < in.AmountUsd {
-		return 0, fmt.Errorf("saldo insuficiente: disponible $%.2f, solicitado $%.2f", usd, in.AmountUsd)
+	if usdt < in.AmountUsdt {
+		return 0, fmt.Errorf("saldo insuficiente: disponible %.2f USDT, solicitado %.2f USDT", usdt, in.AmountUsdt)
 	}
 
 	mov := &core.SavingMovement{

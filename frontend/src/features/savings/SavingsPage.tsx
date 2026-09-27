@@ -253,10 +253,10 @@ export default function SavingsPage() {
                             </div>
                             <div className="text-right text-[11px] leading-tight shrink-0 ml-1.5">
                               <span className={cn("tabular-nums font-semibold", m.type === "deposit" ? "text-chart-2" : "text-destructive")}>
-                                {m.type === "deposit" ? "+" : "-"}{formatUsd(m.amount_usd)}
+                                {m.type === "deposit" ? "+" : "-"}{formatUsd(m.amount_usdt)}
                               </span>
                               <br />
-                              <span className="tabular-nums text-muted-foreground">{formatUsd(m.amount_usdt)} USDT</span>
+                              <span className="tabular-nums text-muted-foreground">{formatUsd(m.amount_usd)} BCV</span>
                               <br />
                               <span className="tabular-nums text-muted-foreground">{formatBs(m.amount_bs)}</span>
                             </div>

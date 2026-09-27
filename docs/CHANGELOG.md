@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.2] - 2026-09-27
+
+### Fixed
+- Retiros de ahorros validan el saldo en USDT (moneda base del módulo); antes comparaban en USD BCV y podían rechazar retiros válidos o permitir sobregiro cuando la relación paralelo/oficial cambiaba entre movimientos
+- Movimientos de ahorros muestran el monto USDT como principal y el USD BCV como secundario (consistente con el header de cuenta y el total global)
+- Mensaje de "saldo insuficiente" en retiros reporta el saldo disponible en USDT
+
+### Added
+- Tests de regresión para retiros de ahorros: tasas mixtas entre depósito y retiro, saldo insuficiente, retiro del saldo exacto
+
 ## [1.2.1] - 2026-09-27
 
 ### Changed
