@@ -23,19 +23,17 @@ func Open(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("create db directory: %w", err)
 	}
 
-	conn, err := sql.Open("sqlite", dbPath)
+	// The foreign_keys pragma is per-connection in SQLite, so it must travel
+	// in the DSN: database/sql pools connections, and a PRAGMA via Exec only
+	// affects the single connection that happened to run it.
+	conn, err := sql.Open("sqlite", dbPath+"?_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
 	}
 
-	// WAL mode for better concurrent reads
+	// WAL mode for better concurrent reads (database-level, persists in the file)
 	if _, err := conn.Exec("PRAGMA journal_mode=WAL"); err != nil {
 		return nil, fmt.Errorf("set WAL mode: %w", err)
-	}
-
-	// Enable foreign keys
-	if _, err := conn.Exec("PRAGMA foreign_keys=ON"); err != nil {
-		return nil, fmt.Errorf("enable foreign keys: %w", err)
 	}
 
 	db := &DB{DB: conn, Path: dbPath}

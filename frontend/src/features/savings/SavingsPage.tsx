@@ -106,6 +106,17 @@ export default function SavingsPage() {
   const movUsd = hasR && movUsdt > 0 ? round2(movUsdt * rp / ro) : 0
   const movBs = hasR && movUsdt > 0 ? round2(movUsdt * rp) : 0
 
+  // Full modal reset: closing the modal by any path (success, cancel, X,
+  // backdrop) must leave no stale amount, date, description or income flags.
+  const resetMovementModal = () => {
+    setMovAccId(null)
+    setMovUsdtStr("")
+    setMovDate(new Date().toISOString().split('T')[0])
+    setMovDesc("")
+    setMovAsIncome(false)
+    setMovIncomeCat(null)
+  }
+
   const handleMovement = async () => {
     if (!movAccId || !movUsdt) return
     setProcessingMov(true)
@@ -115,7 +126,7 @@ export default function SavingsPage() {
       } else {
         await WithdrawFromAccount(movAccId, movUsd, movUsdt, movBs, movDesc, movDate, movAsIncome, movAsIncome ? movIncomeCat : null)
       }
-      setMovUsdtStr(""); setMovDate(new Date().toISOString().split('T')[0]); setMovDesc(""); setMovAccId(null); setMovAsIncome(false)
+      resetMovementModal()
       await fetchAll()
       if (expandedId) loadMovements(expandedId)
     } catch (err: any) { alert(err?.message || err || "Error al procesar"); console.error(err) }
@@ -278,11 +289,11 @@ export default function SavingsPage() {
 
       {/* Deposit/Withdraw dialog */}
       {movAccId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/80" onClick={() => setMovAccId(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/80" onClick={resetMovementModal}>
           <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
             <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
               <h3 className="text-sm font-semibold">{movType === "deposit" ? "Depositar" : "Retirar"}</h3>
-              <Button variant="ghost" size="icon-xs" onClick={() => setMovAccId(null)}><X className="size-3.5" /></Button>
+              <Button variant="ghost" size="icon-xs" onClick={resetMovementModal}><X className="size-3.5" /></Button>
             </div>
             <div className="p-4 space-y-3">
               {/* Date */}
@@ -338,7 +349,7 @@ export default function SavingsPage() {
               )}
 
               <div className="flex justify-end gap-2 pt-1">
-                <Button variant="outline" size="xs" onClick={() => setMovAccId(null)}>Cancelar</Button>
+                <Button variant="outline" size="xs" onClick={resetMovementModal}>Cancelar</Button>
                 <Button size="xs" variant={movType === "deposit" ? "default" : "destructive"} onClick={handleMovement} disabled={processingMov || !movUsdt}>
                   {processingMov ? "Procesando..." : movType === "deposit" ? "Depositar" : "Retirar"}
                 </Button>

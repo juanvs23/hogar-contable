@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.3] - 2026-09-27
+
+### Fixed
+- Eliminar una cuenta de ahorros ahora borra sus movimientos en una misma transacción (antes dejaba filas huérfanas invisibles en la DB pese a que la UI prometía "y todos sus movimientos")
+- Foreign keys ahora se aplican a todas las conexiones del pool vía DSN (`_pragma=foreign_keys(1)`); antes el PRAGMA corría en una sola conexión y las FK no se cumplían de verdad
+- El modal de depósito/retiro de ahorros resetea monto, fecha, descripción, checkbox de ingreso y categoría al cerrarse por cualquier camino (Cancelar, X, fondo); antes un modal cancelado heredaba el monto tipeado al siguiente
+
+### Added
+- Tests de repositorio sobre DB temporal: FK aplicadas por conexión, delete de cuenta sin movimientos huérfanos, delete de cuenta inexistente como no-op
+
 ## [1.2.2] - 2026-09-27
 
 ### Fixed

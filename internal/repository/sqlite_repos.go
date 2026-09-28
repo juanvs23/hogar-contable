@@ -416,8 +416,22 @@ func (r *SQLiteSavingAccountRepo) Update(acc *core.SavingAccount) error {
 }
 
 func (r *SQLiteSavingAccountRepo) Delete(id int64) error {
-	_, err := r.db.Exec(`DELETE FROM saving_accounts WHERE id=?`, id)
-	return err
+	// The UI promises "la cuenta y todos sus movimientos": delete both
+	// atomically so a failure can never orphan movements or leave a
+	// half-deleted account.
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(`DELETE FROM saving_movements WHERE account_id=?`, id); err != nil {
+		return fmt.Errorf("delete movements: %w", err)
+	}
+	if _, err := tx.Exec(`DELETE FROM saving_accounts WHERE id=?`, id); err != nil {
+		return fmt.Errorf("delete account: %w", err)
+	}
+	return tx.Commit()
 }
 
 func (r *SQLiteSavingAccountRepo) GetBalance(accountID int64) (usd, usdt, bs float64, err error) {
