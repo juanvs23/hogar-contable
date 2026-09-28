@@ -6,6 +6,12 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "Info": {
+    "productName": "Hogar Contable",
+    "productVersion": "1.3.2",
+    "copyright": "Copyright © 2026 JuanVS23",
+    "comments": "Aplicación de escritorio para finanzas personales"
+  },
   "author": {
     "name": "JuanVS23",
     "email": "juanvs23@gmail.com"

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.2] - 2026-09-27
+
+### Build
+- NSIS installer soporta instalación por-usuario: con `WAILS_INSTALL_SCOPE=user` los registros van a HKCU (instalación sin permisos de administrador); sin la variable se mantiene HKLM como antes
+- wails.json expone la versión real del producto (sección Info, productVersion 1.3.2) para que el installer y el .exe reporten la versión correcta en Windows
+
 ## [1.3.1] - 2026-09-27
 
 ### Added
