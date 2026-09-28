@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1] - 2026-09-27
+
+### Added
+- Test de integridad de upgrade (`upgrade_integrity_test.go`): simula una DB escrita por el binario pre-fix (huérfanos y referencias rotas incluidas), corre el código nuevo encima y verifica fila por fila que los datos previos quedan intactos — arranque sin errores, lecturas correctas, retiro con tasas mixtas sobre historial viejo, edición de movimientos con referencias legadas, categorías en uso protegidas, y ningún re-escritura silenciosa del historial
+
 ## [1.3.0] - 2026-09-27
 
 ### Changed
