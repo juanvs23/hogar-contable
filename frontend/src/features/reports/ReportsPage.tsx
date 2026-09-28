@@ -144,24 +144,24 @@ export default function ReportsPage() {
     }
   }
 
-  // Sort categories by USD descending (fallback to Bs if USD is 0)
-  const catValue = (c: core.CategoryTotal) => c.total_usd > 0 ? c.total_usd : c.total_bs
-  const sortedExpenses = [...expenseCats].filter((c) => c.total_usd > 0 || c.total_bs > 0).sort((a, b) => catValue(b) - catValue(a))
-  const sortedIncome = [...incomeCats].filter((c) => c.total_usd > 0 || c.total_bs > 0).sort((a, b) => catValue(b) - catValue(a))
+  // Sort categories by USDT descending (fallback to Bs if USDT is 0)
+  const catValue = (c: core.CategoryTotal) => c.total_usdt > 0 ? c.total_usdt : c.total_bs
+  const sortedExpenses = [...expenseCats].filter((c) => c.total_usdt > 0 || c.total_bs > 0).sort((a, b) => catValue(b) - catValue(a))
+  const sortedIncome = [...incomeCats].filter((c) => c.total_usdt > 0 || c.total_bs > 0).sort((a, b) => catValue(b) - catValue(a))
   const topExpense = sortedExpenses[0] ?? null
 
-  // Display value helper: prefer USD, fallback to Bs
+  // Display value helper: prefer USDT, fallback to Bs
   const displayValue = (cat: core.CategoryTotal): string =>
-    cat.total_usd > 0 ? formatUsd(cat.total_usd) : formatBs(cat.total_bs)
+    cat.total_usdt > 0 ? formatUsd(cat.total_usdt) : formatBs(cat.total_bs)
 
-  const isUsd = (cat: core.CategoryTotal): boolean => cat.total_usd > 0
+  const isUsdt = (cat: core.CategoryTotal): boolean => cat.total_usdt > 0
 
-  // Bar chart data (prefer USD, fallback to Bs)
-  const hasUsd = (summary?.total_income_usd ?? 0) > 0 || (summary?.total_expenses_usd ?? 0) > 0
+  // Bar chart data (prefer USDT, fallback to Bs)
+  const hasUsdt = (summary?.total_income_usdt ?? 0) > 0 || (summary?.total_expenses_usdt ?? 0) > 0
   const barData = summary
     ? [
-        { name: "Ingresos", monto: hasUsd ? summary.total_income_usd : summary.total_income_bs, isUsd },
-        { name: "Gastos", monto: hasUsd ? summary.total_expenses_usd : summary.total_expenses_bs, isUsd },
+        { name: "Ingresos", monto: hasUsdt ? summary.total_income_usdt : summary.total_income_bs },
+        { name: "Gastos", monto: hasUsdt ? summary.total_expenses_usdt : summary.total_expenses_bs },
       ]
     : []
 
@@ -204,20 +204,20 @@ export default function ReportsPage() {
             <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <TrendingUp className="size-3.5 text-chart-2" /> Ingresos
             </p>
-            <p className="text-xl font-bold text-chart-2">{formatUsd(summary.total_income_usd)}</p>
+            <p className="text-xl font-bold text-chart-2">{formatUsd(summary.total_income_usdt)} USDT</p>
             <p className="text-xs text-muted-foreground mt-0.5">{formatBs(summary.total_income_bs)}</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <TrendingDown className="size-3.5 text-destructive" /> Gastos
             </p>
-            <p className="text-xl font-bold text-destructive">{formatUsd(summary.total_expenses_usd)}</p>
+            <p className="text-xl font-bold text-destructive">{formatUsd(summary.total_expenses_usdt)} USDT</p>
             <p className="text-xs text-muted-foreground mt-0.5">{formatBs(summary.total_expenses_bs)}</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Balance</p>
-            <p className={`text-xl font-bold ${summary.balance_usd >= 0 ? "text-chart-1" : "text-destructive"}`}>
-              {formatUsd(summary.balance_usd)}
+            <p className={`text-xl font-bold ${summary.balance_usdt >= 0 ? "text-chart-1" : "text-destructive"}`}>
+              {formatUsd(summary.balance_usdt)} USDT
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">{formatBs(summary.balance_bs)}</p>
           </div>
@@ -335,9 +335,9 @@ export default function ReportsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        <CompareRow label="Ingresos" valA={cmpSummaryA?.total_income_usd ?? 0} valB={cmpSummaryB?.total_income_usd ?? 0} format={formatUsd} />
-                        <CompareRow label="Gastos" valA={cmpSummaryA?.total_expenses_usd ?? 0} valB={cmpSummaryB?.total_expenses_usd ?? 0} format={formatUsd} />
-                        <CompareRow label="Balance" valA={cmpSummaryA?.balance_usd ?? 0} valB={cmpSummaryB?.balance_usd ?? 0} format={formatUsd} />
+                        <CompareRow label="Ingresos (USDT)" valA={cmpSummaryA?.total_income_usdt ?? 0} valB={cmpSummaryB?.total_income_usdt ?? 0} format={formatUsd} />
+                        <CompareRow label="Gastos (USDT)" valA={cmpSummaryA?.total_expenses_usdt ?? 0} valB={cmpSummaryB?.total_expenses_usdt ?? 0} format={formatUsd} />
+                        <CompareRow label="Balance (USDT)" valA={cmpSummaryA?.balance_usdt ?? 0} valB={cmpSummaryB?.balance_usdt ?? 0} format={formatUsd} />
                         <tr className="border-t border-border"><td colSpan={4} className="py-2 text-xs text-muted-foreground">En bolívares</td></tr>
                         <CompareRow label="Ingresos (Bs)" valA={cmpSummaryA?.total_income_bs ?? 0} valB={cmpSummaryB?.total_income_bs ?? 0} format={formatBs} />
                         <CompareRow label="Gastos (Bs)" valA={cmpSummaryA?.total_expenses_bs ?? 0} valB={cmpSummaryB?.total_expenses_bs ?? 0} format={formatBs} />
@@ -378,9 +378,9 @@ export default function ReportsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        <CompareRow label="Ingresos" valA={cmpYearSummaryA?.total_income_usd ?? 0} valB={cmpYearSummaryB?.total_income_usd ?? 0} format={formatUsd} />
-                        <CompareRow label="Gastos" valA={cmpYearSummaryA?.total_expenses_usd ?? 0} valB={cmpYearSummaryB?.total_expenses_usd ?? 0} format={formatUsd} />
-                        <CompareRow label="Balance" valA={cmpYearSummaryA?.balance_usd ?? 0} valB={cmpYearSummaryB?.balance_usd ?? 0} format={formatUsd} />
+                        <CompareRow label="Ingresos (USDT)" valA={cmpYearSummaryA?.total_income_usdt ?? 0} valB={cmpYearSummaryB?.total_income_usdt ?? 0} format={formatUsd} />
+                        <CompareRow label="Gastos (USDT)" valA={cmpYearSummaryA?.total_expenses_usdt ?? 0} valB={cmpYearSummaryB?.total_expenses_usdt ?? 0} format={formatUsd} />
+                        <CompareRow label="Balance (USDT)" valA={cmpYearSummaryA?.balance_usdt ?? 0} valB={cmpYearSummaryB?.balance_usdt ?? 0} format={formatUsd} />
                         <tr className="border-t border-border"><td colSpan={4} className="py-2 text-xs text-muted-foreground">En bolívares</td></tr>
                         <CompareRow label="Ingresos (Bs)" valA={cmpYearSummaryA?.total_income_bs ?? 0} valB={cmpYearSummaryB?.total_income_bs ?? 0} format={formatBs} />
                         <CompareRow label="Gastos (Bs)" valA={cmpYearSummaryA?.total_expenses_bs ?? 0} valB={cmpYearSummaryB?.total_expenses_bs ?? 0} format={formatBs} />
@@ -408,8 +408,8 @@ export default function ReportsPage() {
             <BarChart data={barData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis dataKey="name" className="text-xs" />
-              <YAxis className="text-xs" tickFormatter={(v) => hasUsd ? `$${Number(v)}` : `Bs ${Number(v)}`} />
-              <Tooltip formatter={(v) => hasUsd ? formatUsd(Number(v)) : formatBs(Number(v))} />
+              <YAxis className="text-xs" tickFormatter={(v) => hasUsdt ? `$${Number(v)}` : `Bs ${Number(v)}`} />
+              <Tooltip formatter={(v) => hasUsdt ? `${formatUsd(Number(v))} USDT` : formatBs(Number(v))} />
               <Bar dataKey="monto" radius={[4, 4, 0, 0]}>
                 {barData.map((_, i) => (
                   <Cell key={i} fill={i === 0 ? "hsl(var(--chart-2))" : "hsl(var(--chart-5))"} />
@@ -435,7 +435,7 @@ export default function ReportsPage() {
               {/* Header */}
               <div className="flex items-center gap-x-2.5 text-xs text-muted-foreground font-medium px-3 py-1.5 border-b border-border">
                 <span className="flex-1">Categoría</span>
-                <span className="w-20 text-right">USD</span>
+                <span className="w-20 text-right">USDT</span>
                 <span className="w-24 text-right hidden sm:block">Bs</span>
               </div>
               {/* Rows */}
@@ -459,7 +459,7 @@ export default function ReportsPage() {
                       {displayValue(cat)}
                     </span>
                     <span className="w-24 text-right tabular-nums text-muted-foreground hidden sm:block">
-                      {isUsd(cat) ? formatBs(cat.total_bs) : "—"}
+                      {isUsdt(cat) ? formatBs(cat.total_bs) : "—"}
                     </span>
                   </div>
                 )
@@ -481,7 +481,7 @@ export default function ReportsPage() {
               {/* Header */}
               <div className="flex items-center gap-x-2.5 text-xs text-muted-foreground font-medium px-3 py-1.5 border-b border-border">
                 <span className="flex-1">Categoría</span>
-                <span className="w-20 text-right">USD</span>
+                <span className="w-20 text-right">USDT</span>
                 <span className="w-24 text-right hidden sm:block">Bs</span>
               </div>
               {/* Rows */}
@@ -495,7 +495,7 @@ export default function ReportsPage() {
                     {displayValue(cat)}
                   </span>
                   <span className="w-24 text-right tabular-nums text-muted-foreground hidden sm:block">
-                    {isUsd(cat) ? formatBs(cat.total_bs) : "—"}
+                    {isUsdt(cat) ? formatBs(cat.total_bs) : "—"}
                   </span>
                 </div>
               ))}
@@ -511,18 +511,18 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <p className="text-xs text-muted-foreground">Ingresos</p>
-              <p className="text-lg font-bold text-chart-2">{formatUsd(yearlySummary.total_income_usd)}</p>
+              <p className="text-lg font-bold text-chart-2">{formatUsd(yearlySummary.total_income_usdt)} USDT</p>
               <p className="text-xs text-muted-foreground">{formatBs(yearlySummary.total_income_bs)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Gastos</p>
-              <p className="text-lg font-bold text-destructive">{formatUsd(yearlySummary.total_expenses_usd)}</p>
+              <p className="text-lg font-bold text-destructive">{formatUsd(yearlySummary.total_expenses_usdt)} USDT</p>
               <p className="text-xs text-muted-foreground">{formatBs(yearlySummary.total_expenses_bs)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Balance</p>
-              <p className={`text-lg font-bold ${yearlySummary.balance_usd >= 0 ? "text-chart-1" : "text-destructive"}`}>
-                {formatUsd(yearlySummary.balance_usd)}
+              <p className={`text-lg font-bold ${yearlySummary.balance_usdt >= 0 ? "text-chart-1" : "text-destructive"}`}>
+                {formatUsd(yearlySummary.balance_usdt)} USDT
               </p>
               <p className="text-xs text-muted-foreground">{formatBs(yearlySummary.balance_bs)}</p>
             </div>

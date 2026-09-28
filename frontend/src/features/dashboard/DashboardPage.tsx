@@ -26,14 +26,14 @@ export default function DashboardPage() {
     GetMonthlySummary(year, month).then(setSummary).catch(console.error)
   }, [currentMonth])
 
-  const income = summary?.total_income_usd ?? 0
-  const expenses = summary?.total_expenses_usd ?? 0
-  const balance = summary?.balance_usd ?? 0
+  const income = summary?.total_income_usdt ?? 0
+  const expenses = summary?.total_expenses_usdt ?? 0
+  const balance = summary?.balance_usdt ?? 0
 
   const cards = [
     {
       title: "Ingresos",
-      value: formatUsd(income),
+      value: `${formatUsd(income)} USDT`,
       sub: `Bs ${summary?.total_income_bs.toFixed(2) ?? "0,00"}`,
       icon: TrendingUp,
       color: "text-chart-2",
@@ -41,7 +41,7 @@ export default function DashboardPage() {
     },
     {
       title: "Gastos",
-      value: formatUsd(expenses),
+      value: `${formatUsd(expenses)} USDT`,
       sub: `Bs ${summary?.total_expenses_bs.toFixed(2) ?? "0,00"}`,
       icon: TrendingDown,
       color: "text-destructive",
@@ -49,7 +49,7 @@ export default function DashboardPage() {
     },
     {
       title: "Balance",
-      value: formatUsd(balance),
+      value: `${formatUsd(balance)} USDT`,
       sub: `Bs ${summary?.balance_bs.toFixed(2) ?? "0,00"}`,
       icon: Wallet,
       color: balance >= 0 ? "text-chart-1" : "text-destructive",

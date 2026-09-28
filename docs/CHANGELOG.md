@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0] - 2026-09-27
+
+### Changed
+- USDT es ahora la moneda principal de todos los cálculos fijos: Dashboard (Ingresos/Gastos/Balance) y Reportes (resúmenes mensual/anual, desglose por categoría, comparación entre meses y años con diferencial porcentual, gráficos) muestran el total USDT como cifra principal, con Bs como secundario
+- Motivo: el usuario ahorra y transacciona en USDT; el equivalente USD BCV quedaba inflado por la prima de la tasa USDT sobre la oficial y no reflejaba el dinero real disponible
+- Los montos guardados por transacción/movimiento no cambiaron; es un cambio de visualización sobre los campos que ya se almacenaban
+
 ## [1.2.3] - 2026-09-27
 
 ### Fixed
